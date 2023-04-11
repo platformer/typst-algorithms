@@ -86,7 +86,7 @@
     sorted-elems += whitespaces
     sorted-elems
   }
-  
+
   // concatenate consecutive non-whitespace elements
   // i.e. just combine everything that definitely aren't
   // on separate lines
@@ -98,13 +98,13 @@
       if (
         child == [ ]
         or child == linebreak()
-        or child == parbreak() 
+        or child == parbreak()
       ){
         if temp != [] {
           joined-children.push(temp)
           temp = []
         }
-        
+
         joined-children.push(child)
       } else {
         temp += child
@@ -145,16 +145,16 @@
       let joined-lines = ()
       let line-parts = []
       let num-linebreaks = 0
-    
-      for i, line in lines-and-breaks {
+
+      for (i, line) in lines-and-breaks.enumerate() {
         if line == linebreak() {
           if line-parts != [] {
             joined-lines.push(line-parts)
             line-parts = []
           }
-    
+
           num-linebreaks += 1
-    
+
           if num-linebreaks > 1 {
             joined-lines.push([])
           }
@@ -163,7 +163,7 @@
           num-linebreaks = 0
         }
       }
-    
+
       if line-parts != [] {
         joined-lines.push(line-parts)
       }
@@ -171,11 +171,11 @@
       joined-lines
     }
   )
-  
+
   let rows = ()
 
   // build table input (with line numbers if specified)
-  for i, line in display-lines {
+  for (i, line) in display-lines.enumerate() {
     let formatted-line = {
       counter("_algo-indent").display(n =>
         pad(
@@ -184,7 +184,7 @@
         )
       )
     }
-    
+
     if line-numbers {
       let line-number = i + 1
       rows.push([#line-number])
@@ -192,7 +192,7 @@
 
     rows.push(formatted-line)
   }
-  
+
   align(center, block(
     width: auto,
     height: auto,
@@ -204,38 +204,38 @@
   )[
     #let algo-header = {
       set align(left)
-    
+
       if title != none {
         set text(1.1em)
-        
+
         if type(title) == "string" {
           underline(smallcaps(title))
         } else {
           title
         }
-  
+
         if parameters.len() == 0 {
           $()$
         }
       }
-      
+
       if parameters != () {
         set text(1.1em)
-  
+
         $($
-  
-        for i, param in parameters {
+
+        for (i, param) in parameters.enumerate() {
           if type(param) == "string" {
             math.italic(param)
           } else {
             param
           }
-  
+
           if i < parameters.len() - 1 {
             [, ]
           }
         }
-  
+
         $)$
       }
 
@@ -246,7 +246,7 @@
 
     #algo-header
     #v(weak: true, row-gutter)
-    
+
     #align(left, table(
       columns: if line-numbers {2} else {1},
       column-gutter: column-gutter,
@@ -289,20 +289,20 @@
   set par(justify: false)
   let content = ()
   let i = 1
-  
+
   for item in body.children {
     if item.func() == raw {
       for line in item.text.split("\n") {
         if line-numbers {
           content.push(str(i))
         }
-        
+
         content.push(raw(line, lang: item.lang))
         i += 1
       }
     }
   }
-  
+
   align(center, block(
     stroke: stroke,
     inset: inset,
