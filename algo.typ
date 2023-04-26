@@ -1,12 +1,16 @@
+// key to indent counter
+#let _algo-indent-key = "_algo-indent"
+
+
 // Increases indent in an algo element.
 // Only place at beginning or end of lines.
-#let i = { counter("_algo-indent").step() }
+#let i = { counter(_algo-indent-key).step() }
 
 
 // Decreases indent in an algo element.
 // Only place at beginning or end of lines.
 #let d = {
-  counter("_algo-indent").update(n => {
+  counter(_algo-indent-key).update(n => {
     assert(n - 1 >= 0, message: "dedented too much")
     n - 1
   })
@@ -20,16 +24,6 @@
 //   title: Algorithm title.
 //   Parameters: Array of parameters.
 //   line-numbers: Whether to have line numbers.
-//   implicit-linebreaks: If true, line-terminating whitespaces
-//     in body are assumed to be linebreaks.
-//
-//     Note: Using implicit-linebreaks may cause undesired behavior.
-//           It doesn't play nice with special characters (+, -, ',
-//           ", :, etc.) that are outside of math mode. Whitespaces
-//           around these characters are treated as linebreaks. Also
-//           doesn't work when mixing content mode and math mode on
-//           the same line. They still work for pure content or pure
-//           math mode though!
 //   indent-size: Size of line indentations.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
@@ -41,7 +35,6 @@
   title: none,
   parameters: (),
   line-numbers: true,
-  implicit-linebreaks: false,
   indent-size: 20pt,
   row-gutter: 10pt,
   column-gutter: 10pt,
@@ -90,7 +83,7 @@
   // concatenate consecutive non-whitespace elements
   // i.e. just combine everything that definitely aren't
   // on separate lines
-  let lines-and-whitespaces = {
+  let text-and-whitespaces = {
     let joined-children = ()
     let temp = []
 
@@ -119,58 +112,43 @@
   }
 
   // filter out non-meaningful whitespace elements
-  let lines-and-breaks = lines-and-whitespaces.filter(elem =>
-    if implicit-linebreaks {
-      elem != [ ]
-    } else {
-      elem != [ ] and elem != parbreak()
-    }
+  let text-and-breaks = text-and-whitespaces.filter(
+    elem => elem != [ ] and elem != parbreak()
   )
 
   // handling meaningful whitespace
   // make final list of empty and non-empty lines
-  let display-lines = (
-    if implicit-linebreaks {
-      // breaks are registered as empty lines in output
-      lines-and-breaks.map(elem =>
-        if elem == linebreak() or elem == parbreak() {
-          []
-        } else {
-          elem
+  let display-lines = {
+    // join consecutive lines not separated by an explicit
+    // linebreak with a space
+    let joined-lines = ()
+    let line-parts = []
+    let num-linebreaks = 0
+
+    for (i, line) in text-and-breaks.enumerate() {
+      if line == linebreak() {
+        if line-parts != [] {
+          joined-lines.push(line-parts)
+          line-parts = []
         }
-      )
-    } else {
-      // join consecutive lines not separated by an explicit
-      // linebreak with a space
-      let joined-lines = ()
-      let line-parts = []
-      let num-linebreaks = 0
 
-      for (i, line) in lines-and-breaks.enumerate() {
-        if line == linebreak() {
-          if line-parts != [] {
-            joined-lines.push(line-parts)
-            line-parts = []
-          }
+        num-linebreaks += 1
 
-          num-linebreaks += 1
-
-          if num-linebreaks > 1 {
-            joined-lines.push([])
-          }
-        } else {
-          line-parts += [#line ]
-          num-linebreaks = 0
+        if num-linebreaks > 1 {
+          joined-lines.push([])
         }
+      } else {
+        line-parts += [#line ]
+        num-linebreaks = 0
       }
-
-      if line-parts != [] {
-        joined-lines.push(line-parts)
-      }
-
-      joined-lines
     }
-  )
+
+    if line-parts != [] {
+      joined-lines.push(line-parts)
+    }
+
+    joined-lines
+  }
 
   let rows = ()
 
