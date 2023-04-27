@@ -15,6 +15,9 @@
   "and",
   "or",
   "not",
+  "in",
+  "to",
+  "down",
   "let",
   "return",
   "goto",
@@ -198,7 +201,7 @@
           it
         }
       }
-      
+
       counter(_algo-indent-key).display(n =>
         pad(
           left: indent-size * n,
