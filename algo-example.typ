@@ -4,7 +4,8 @@
 // check out algo.typ to see all the options
 #algo(
   title: "Fibonacci",       // title and parameters are optional
-  parameters: ("n",)
+  parameters: ("n",),
+  strong-keywords: true     // bold keywords
 )[
   if $n < 0$:#i\            // use #i to indent the following lines
     return null#d\          // use #d to to dedent the following lines

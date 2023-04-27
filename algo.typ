@@ -2,13 +2,34 @@
 #let _algo-indent-key = "_algo-indent"
 
 
+// list of default keywords
+#let _algo-default-keywords = (
+  "if",
+  "else",
+  "then",
+  "while",
+  "for",
+  "do",
+  ":",
+  "end",
+  "and",
+  "or",
+  "not",
+  "let",
+  "return",
+  "goto",
+)
+
+
 // Increases indent in an algo element.
-// Only place at beginning or end of lines.
+// All uses of #i within a line will be
+//   applied to the next line.
 #let i = { counter(_algo-indent-key).step() }
 
 
 // Decreases indent in an algo element.
-// Only place at beginning or end of lines.
+// All uses of #d within a line will be
+//   applied to the next line.
 #let d = {
   counter(_algo-indent-key).update(n => {
     assert(n - 1 >= 0, message: "dedented too much")
@@ -24,6 +45,9 @@
 //   title: Algorithm title.
 //   Parameters: Array of parameters.
 //   line-numbers: Whether to have line numbers.
+//   strong-keywords: Whether to have bold keywords.
+//   keywords: List of terms to receive strong emphasis if
+//     strong-keywords is true.
 //   indent-size: Size of line indentations.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
@@ -35,6 +59,8 @@
   title: none,
   parameters: (),
   line-numbers: true,
+  strong-keywords: false,
+  keywords: _algo-default-keywords,
   indent-size: 20pt,
   row-gutter: 10pt,
   column-gutter: 10pt,
@@ -43,7 +69,16 @@
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
   set par(justify: false)
-  counter("_algo-indent").update(0)
+  counter(_algo-indent-key).update(0)
+
+  // convert keywords to content values
+  keywords = keywords.map(e => {
+    if type(e) == "string" {
+      [#e]
+    } else {
+      e
+    }
+  })
 
   // sorts body.children such that, between portions of content,
   // indentation changes always occur before whitespace
@@ -63,7 +98,7 @@
         sorted-elems += indent-updates
         indent-updates = ()
       } else if repr(child).starts-with(
-        "update(counter: counter(\"" + "_algo-indent" + "\")"
+        "update(counter: counter(\"" + _algo-indent-key + "\")"
       ) {
         indent-updates.push(child)
       } else {
@@ -118,7 +153,7 @@
 
   // handling meaningful whitespace
   // make final list of empty and non-empty lines
-  let display-lines = {
+  let lines = {
     // join consecutive lines not separated by an explicit
     // linebreak with a space
     let joined-lines = ()
@@ -150,12 +185,21 @@
     joined-lines
   }
 
+  // build table input (with line numbers if specified)
   let rows = ()
 
-  // build table input (with line numbers if specified)
-  for (i, line) in display-lines.enumerate() {
+  for (i, line) in lines.enumerate() {
     let formatted-line = {
-      counter("_algo-indent").display(n =>
+      // show keywords in bold
+      show regex("\S+"): it => {
+        if strong-keywords and it in keywords {
+          strong(it)
+        } else {
+          it
+        }
+      }
+      
+      counter(_algo-indent-key).display(n =>
         pad(
           left: indent-size * n,
           line
@@ -171,6 +215,49 @@
     rows.push(formatted-line)
   }
 
+  // build algorithm header
+  let algo-header = {
+    set align(left)
+
+    if title != none {
+      set text(1.1em)
+
+      if type(title) == "string" {
+        underline(smallcaps(title))
+      } else {
+        title
+      }
+
+      if parameters.len() == 0 {
+        $()$
+      }
+    }
+
+    if parameters != () {
+      set text(1.1em)
+
+      $($
+
+      for (i, param) in parameters.enumerate() {
+        if type(param) == "string" {
+          math.italic(param)
+        } else {
+          param
+        }
+
+        if i < parameters.len() - 1 {
+          [, ]
+        }
+      }
+
+      $)$
+    }
+
+    if title != none or parameters != () {
+      [:]
+    }
+  }
+
   align(center, block(
     width: auto,
     height: auto,
@@ -180,48 +267,6 @@
     outset: 0pt,
     breakable: true
   )[
-    #let algo-header = {
-      set align(left)
-
-      if title != none {
-        set text(1.1em)
-
-        if type(title) == "string" {
-          underline(smallcaps(title))
-        } else {
-          title
-        }
-
-        if parameters.len() == 0 {
-          $()$
-        }
-      }
-
-      if parameters != () {
-        set text(1.1em)
-
-        $($
-
-        for (i, param) in parameters.enumerate() {
-          if type(param) == "string" {
-            math.italic(param)
-          } else {
-            param
-          }
-
-          if i < parameters.len() - 1 {
-            [, ]
-          }
-        }
-
-        $)$
-      }
-
-      if title != none or parameters != () {
-        [:]
-      }
-    }
-
     #algo-header
     #v(weak: true, row-gutter)
 
