@@ -1,6 +1,11 @@
+// key to algo counter
+#let _algo-counter-key = "_algo-counter"
+
 // key to indent counter
 #let _algo-indent-key = "_algo-indent"
 
+// state value for storing algo comments
+#let _algo-comment-lists = state("_algo-comment-lists", ())
 
 // list of default keywords
 #let _algo-default-keywords = (
@@ -41,6 +46,18 @@
 }
 
 
+// Adds a comment to a line in an algo body.
+//
+// Parameters:
+//   body: Comment content.
+#let comment(body) = {
+  _algo-comment-lists.update(comment-lists => {
+    comment-lists.last().last() += body
+    comment-lists
+  })
+}
+
+
 // Displays an algorithm in a block element.
 //
 // Parameters:
@@ -51,6 +68,8 @@
 //   strong-keywords: Whether to have bold keywords.
 //   keywords: List of terms to receive strong emphasis if
 //     strong-keywords is true.
+//   comment-prefix: Content to prepend comments with.
+//   comment-color: Font color for comments.
 //   indent-size: Size of line indentations.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
@@ -64,6 +83,8 @@
   line-numbers: true,
   strong-keywords: false,
   keywords: _algo-default-keywords,
+  comment-prefix: "// ",
+  comment-color: rgb(40%, 40%, 40%),
   indent-size: 20pt,
   row-gutter: 10pt,
   column-gutter: 10pt,
@@ -72,7 +93,14 @@
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
   set par(justify: false)
+
+  counter(_algo-counter-key).step()
   counter(_algo-indent-key).update(0)
+
+  _algo-comment-lists.update(comment-lists => {
+    comment-lists.push(())
+    comment-lists
+  })
 
   // convert keywords to content values
   keywords = keywords.map(e => {
@@ -157,8 +185,6 @@
   // handling meaningful whitespace
   // make final list of empty and non-empty lines
   let lines = {
-    // join consecutive lines not separated by an explicit
-    // linebreak with a space
     let joined-lines = ()
     let line-parts = []
     let num-linebreaks = 0
@@ -188,12 +214,11 @@
     joined-lines
   }
 
-  // build table input (with line numbers if specified)
-  let rows = ()
+  // build text and comment lists
+  let steps = ()
 
   for (i, line) in lines.enumerate() {
     let formatted-line = {
-      // show keywords in bold
       show regex("\S+"): it => {
         if strong-keywords and it in keywords {
           strong(it)
@@ -201,6 +226,11 @@
           it
         }
       }
+
+      _algo-comment-lists.update(comment-lists => {
+        comment-lists.last().push([])
+        comment-lists
+      })
 
       counter(_algo-indent-key).display(n =>
         pad(
@@ -210,12 +240,7 @@
       )
     }
 
-    if line-numbers {
-      let line-number = i + 1
-      rows.push([#line-number])
-    }
-
-    rows.push(formatted-line)
+    steps.push(formatted-line)
   }
 
   // build algorithm header
@@ -261,6 +286,61 @@
     }
   }
 
+  // build table
+  let algo-table = locate(loc => {
+    let comment-list = _algo-comment-lists.final(loc).at(
+      counter(_algo-counter-key).at(loc).at(0) - 1
+    )
+
+    let num-columns = 1
+    let has-comments = comment-list.any(e => e != [])
+
+    if line-numbers and has-comments {
+      num-columns = 3
+    } else if line-numbers or has-comments {
+      num-columns = 2
+    }
+
+    let table-data = ()
+
+    for (i, line) in steps.enumerate() {
+      if line-numbers {
+        let line-number = i + 1
+        table-data.push([#line-number])
+      }
+
+      table-data.push(line)
+
+      if has-comments {
+        if comment-list.at(i) != [] {
+          table-data.push({
+            set text(fill: comment-color)
+            comment-prefix
+            comment-list.at(i)
+          })
+        } else {
+          table-data.push([])
+        }
+      }
+    }
+
+    table(
+      columns: num-columns,
+      column-gutter: column-gutter,
+      row-gutter: row-gutter,
+      align:
+        if num-columns > 1 {
+          (x, _) => (right, left, left).at(x)
+        } else {
+          left
+        }
+      ,
+      stroke: none,
+      inset: 0pt,
+      ..table-data
+    )
+  })
+
   align(center, block(
     width: auto,
     height: auto,
@@ -272,22 +352,7 @@
   )[
     #algo-header
     #v(weak: true, row-gutter)
-
-    #align(left, table(
-      columns: if line-numbers {2} else {1},
-      column-gutter: column-gutter,
-      row-gutter: row-gutter,
-      align:
-        if line-numbers {
-          (x, _) => (right, left).at(x)
-        } else {
-          left
-        }
-      ,
-      stroke: none,
-      inset: 0pt,
-      ..rows
-    ))
+    #align(left, algo-table)
   ])
 }
 
