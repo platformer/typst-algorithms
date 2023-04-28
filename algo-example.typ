@@ -3,7 +3,7 @@
 
 // check out algo.typ to see all the options
 #algo(
-  title: "Fib",       // title and parameters are optional
+  title: "Fib",             // title and parameters are optional
   parameters: ("n",),
   strong-keywords: true     // bold keywords
 )[
