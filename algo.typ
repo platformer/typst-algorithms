@@ -84,7 +84,7 @@
   strong-keywords: false,
   keywords: _algo-default-keywords,
   comment-prefix: "// ",
-  comment-color: rgb(40%, 40%, 40%),
+  comment-color: rgb(25%, 25%, 25%),
   indent-size: 20pt,
   row-gutter: 10pt,
   column-gutter: 10pt,
