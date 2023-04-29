@@ -50,6 +50,9 @@
   strong-keywords: true,
   comment-prefix: [#sym.triangle.stroked.r ],
   comment-color: rgb(100%, 0%, 0%),
+  inset: 5pt,
+  row-gutter: 5pt,
+  column-gutter: 5pt,
   stroke: 2pt + black,
   fill: none,
 )[
@@ -69,7 +72,7 @@
 ]
 
 
-#v(3em)
+#pagebreak()
 
 
 #code()[
@@ -88,6 +91,9 @@
 
 
 #code(
+  inset: 5pt,
+  row-gutter: 5pt,
+  column-gutter: 5pt,
   stroke: 2pt + black,
   fill: none,
 )[
