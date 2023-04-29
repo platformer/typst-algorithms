@@ -84,7 +84,7 @@
   strong-keywords: false,
   keywords: _algo-default-keywords,
   comment-prefix: "// ",
-  comment-color: rgb(25%, 25%, 25%),
+  comment-color: rgb(45%, 45%, 45%),
   indent-size: 20pt,
   row-gutter: 10pt,
   column-gutter: 10pt,
@@ -329,8 +329,10 @@
       column-gutter: column-gutter,
       row-gutter: row-gutter,
       align:
-        if num-columns > 1 {
+        if line-numbers and has-comments {
           (x, _) => (right, left, left).at(x)
+        } else if line-numbers {
+          (x, _) => (right, left).at(x)
         } else {
           left
         }
