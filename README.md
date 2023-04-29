@@ -22,8 +22,8 @@ Here's a basic use of `algo`:
   parameters: ("n",),
   strong-keywords: true // bold keywords
 )[
-  if $n < 0$:#i\    // use #i to indent the following lines
-    return null#d\  // use #d to to dedent the following lines
+  if $n < 0$:#i\    // #i indents the following lines
+    return null#d\  // #d dedents the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
   return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
@@ -114,7 +114,7 @@ And here's `algo` with some more styling options:
 
 </td>
 <td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" />
+<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" width="90%" />
 </td>
 </tr>
 </table>
