@@ -18,12 +18,12 @@ Here's a basic use of `algo`:
 
 ```typst
 #algo(
-  title: "Fib",           // title and parameters are optional
+  title: "Fib",         // title and parameters are optional
   parameters: ("n",),
-  strong-keywords: true   // bold keywords
+  strong-keywords: true // bold keywords
 )[
-  if $n < 0$:#i\      // use #i to indent the following lines
-    return null#d\    // use #d to to dedent the following lines
+  if $n < 0$:#i\    // use #i to indent the following lines
+    return null#d\  // use #d to to dedent the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
   return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
@@ -67,7 +67,7 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
 
 </td>
 <td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" />
+<img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" width="80%" />
 </td>
 </tr>
 </table>
@@ -82,8 +82,8 @@ And here's `algo` with some more styling options:
 
 ```typst
 #algo(
-  title: [                    // note that title and parameters
-    #set text(size: 15pt)     // can be content
+  title: [                  // title and parameters
+    #set text(size: 15pt)   // can be content
     #emph(smallcaps("Fib"))
   ],
   parameters: ([#math.italic("n")],),
