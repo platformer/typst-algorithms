@@ -18,12 +18,12 @@ Here's a basic use of `algo`:
 
 ```typst
 #algo(
-  title: "Fib",             // title and parameters are optional
+  title: "Fib",           // title and parameters are optional
   parameters: ("n",),
-  strong-keywords: true     // bold keywords
+  strong-keywords: true   // bold keywords
 )[
-  if $n < 0$:#i\            // use #i to indent the following lines
-    return null#d\          // use #d to to dedent the following lines
+  if $n < 0$:#i\      // use #i to indent the following lines
+    return null#d\    // use #d to to dedent the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
   return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
@@ -67,7 +67,7 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
 
 </td>
 <td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" width="55%" />
+<img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" />
 </td>
 </tr>
 </table>
@@ -114,7 +114,7 @@ And here's `algo` with some more styling options:
 
 </td>
 <td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" width="70%" />
+<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" />
 </td>
 </tr>
 </table>
@@ -142,7 +142,7 @@ Here's a basic use of `code`:
 
 </td>
 <td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235324088-a3596e0b-af90-4da3-b326-2de11158baac.png" width="80%" />
+<img src="https://user-images.githubusercontent.com/40146328/235324088-a3596e0b-af90-4da3-b326-2de11158baac.png" />
 </td>
 </tr>
 </table>
@@ -176,7 +176,7 @@ And here's `code` with some styling options:
 
 </td>
 <td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235324247-08438d8b-822a-4795-a78b-a56b95a1c0c0.png" width="80%" />
+<img src="https://user-images.githubusercontent.com/40146328/235324247-08438d8b-822a-4795-a78b-a56b95a1c0c0.png" />
 </td>
 </tr>
 </table>
