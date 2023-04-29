@@ -18,15 +18,16 @@ Here's a basic use of `algo`:
 
 ```typst
 #algo(
-  title: "Fib",         // title and parameters are optional
+  title: "Fib",
   parameters: ("n",),
-  strong-keywords: true // bold keywords
+  strong-keywords: true  // bold keywords
 )[
   if $n < 0$:#i\    // #i indents the following lines
     return null#d\  // #d dedents the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
-  return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
+  return #smallcaps("Fib")$(n-1) +$
+         #smallcaps("Fib")$(n-2)$
 ]
 ```
 
