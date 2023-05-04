@@ -12,10 +12,6 @@ Use the `algo` function for writing pseudocode and the `code` function for writi
 
 Here's a basic use of `algo`:
 
-<table>
-<tr>
-<td>
-
 ```typst
 #algo(
   title: "Fib",
@@ -31,20 +27,11 @@ Here's a basic use of `algo`:
 ]
 ```
 
-</td>
-<td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323240-e59ed7e2-ebb6-4b80-8742-eb171dd3721e.png" />
-</td>
-</tr>
-</table>
+<img src="https://user-images.githubusercontent.com/40146328/235323240-e59ed7e2-ebb6-4b80-8742-eb171dd3721e.png" width="400px" />
 
 <br />
 
 Here's a use of `algo` without a title, parameters, line numbers, or syntax highlighting:
-
-<table>
-<tr>
-<td>
 
 ```typst
 #algo(
@@ -66,20 +53,11 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
 ]
 ```
 
-</td>
-<td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" width="80%" />
-</td>
-</tr>
-</table>
+<img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" width="300px" />
 
 <br />
 
 And here's `algo` with some more styling options:
-
-<table>
-<tr>
-<td>
 
 ```typst
 #algo(
@@ -113,20 +91,11 @@ And here's `algo` with some more styling options:
 ]
 ```
 
-</td>
-<td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" width="90%" />
-</td>
-</tr>
-</table>
+<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" width="300px" />
 
 <br />
 
 Here's a basic use of `code`:
-
-<table>
-<tr>
-<td>
 
 ````typst
 #code()[
@@ -141,20 +110,11 @@ Here's a basic use of `code`:
 ]
 ````
 
-</td>
-<td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235324088-a3596e0b-af90-4da3-b326-2de11158baac.png" />
-</td>
-</tr>
-</table>
+<img src="https://user-images.githubusercontent.com/40146328/235324088-a3596e0b-af90-4da3-b326-2de11158baac.png" width="400px"/>
 
 <br />
 
 And here's `code` with some styling options:
-
-<table>
-<tr>
-<td>
 
 ````typst
 #code(
@@ -175,12 +135,7 @@ And here's `code` with some styling options:
 ]
 ````
 
-</td>
-<td align="center">
-<img src="https://user-images.githubusercontent.com/40146328/235324247-08438d8b-822a-4795-a78b-a56b95a1c0c0.png" />
-</td>
-</tr>
-</table>
+<img src="https://user-images.githubusercontent.com/40146328/235324247-08438d8b-822a-4795-a78b-a56b95a1c0c0.png" width="400px"/>
 
 ## Contributing
 
