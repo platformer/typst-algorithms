@@ -1,8 +1,14 @@
-// key to algo counter
+// counter to track the number algo elements
 #let _algo-counter-key = "_algo-counter"
 
-// key to indent counter
+// counter to track the current indent level in an algo element
 #let _algo-indent-key = "_algo-indent"
+
+// counter to mark the page that each line in an algo element is on
+#let _algo-current-page-key = "_algo-current-page"
+
+// counter to mark the page that each line in a code element is on
+#let _code-current-page-key = "_code-current-page"
 
 // state value for storing algo comments
 #let _algo-comment-lists = state("_algo-comment-lists", ())
@@ -27,6 +33,116 @@
   "return",
   "goto",
 )
+
+
+// Get the thickness of a stroke.
+// Credit to PgBiel on GitHub.
+#let _stroke-thickness(stroke) = {
+  // TODO: When it is possible to access the thickness of any
+  //   stroke value, remove this function.
+
+  if type(stroke) in ("length", "relative length") {
+    stroke
+  } else if type(stroke) == "color" {
+    1pt
+  } else if type(stroke) == "stroke" {
+    let r = regex("^\\d+(?:em|pt|cm|in|%)")
+    let s = repr(stroke).find(r)
+
+    if s == none {
+      1pt
+    } else {
+      eval(s)
+    }
+  } else if type(stroke) == "dictionary" and "thickness" in stroke {
+    stroke.thickness
+  } else {
+    1pt
+  }
+}
+
+
+// Given a line in an algo or code, creates the
+//   indent guides that should appear on that line.
+#let _indent-guides(
+  line,
+  stroke,
+  indent-level,
+  indent-size,
+  block-inset,
+  row-gutter,
+  is-header-empty,
+  is-first-line,
+  is-last-line,
+  page-counter-key,
+) = {
+  // TODO: Replace rect calls with line when the compiler errors
+  //   go away.
+
+  let page-counter = counter(page-counter-key)
+  let guide-width = _stroke-thickness(stroke)
+
+  locate(loc => {
+    let current-page = loc.page()
+
+    style(styles => {
+      let inset-pt = measure(
+        rect(width: block-inset),
+        styles
+      ).width
+
+      let row-gutter-pt = measure(
+        rect(width: row-gutter),
+        styles
+      ).width
+
+      let line-height = measure(line, styles).height
+
+      let text-height = measure(
+        [ABCDEFGHIJKLMNOPQRSTUVWXYZ],
+        styles
+      ).height
+
+      let cell-height = calc.max(line-height, text-height)
+
+      page-counter.display(pg => {
+        let backset = none
+
+        if (
+          (
+            is-first-line and
+            is-header-empty
+          ) or
+          pg != current-page
+        ) {
+          backset = calc.min(inset-pt, row-gutter-pt) / 2
+        } else {
+          backset = row-gutter-pt / 2
+        }
+
+        for j in range(1, indent-level + 1) {
+          place(
+            dx: indent-size * (j - 1) + guide-width / 2 + 0.5pt,
+            dy: -backset,
+            rect(
+              width: 0pt,
+              height: cell-height + backset + (
+                if is-last-line {
+                  calc.min(inset-pt / 2, cell-height / 5)
+                } else {
+                  row-gutter-pt / 2
+                }
+              ),
+              stroke: stroke
+            )
+          )
+        }
+      })
+    })
+
+    page-counter.update(current-page)
+  })
+}
 
 
 // Increases indent in an algo element.
@@ -71,6 +187,7 @@
 //   comment-prefix: Content to prepend comments with.
 //   comment-color: Font color for comments.
 //   indent-size: Size of line indentations.
+//   indent-guides: Stroke for indent guides.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding.
@@ -86,12 +203,19 @@
   comment-prefix: "// ",
   comment-color: rgb(45%, 45%, 45%),
   indent-size: 20pt,
+  indent-guides: none,
   row-gutter: 10pt,
   column-gutter: 10pt,
   inset: 10pt,
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
+  // TODO: Make this an element function when possible.
+  // TODO: When it is possible to make this an element function,
+  //   change comment state to only track comments for most
+  //   recent instance of algo, and query state at first algo
+  //   after current location.
+
   set par(justify: false)
 
   counter(_algo-counter-key).step()
@@ -101,6 +225,10 @@
     comment-lists.push(())
     comment-lists
   })
+
+  locate(
+    loc => counter(_algo-current-page-key).update(loc.page())
+  )
 
   // convert keywords to content values
   keywords = keywords.map(e => {
@@ -114,6 +242,7 @@
   // sorts body.children such that, between portions of content,
   // indentation changes always occur before whitespace
   // makes placement of indentation commands more flexible in body
+  // TODO: Remove this, probably.
   let sorted-children = {
     let whitespaces = ()
     let indent-updates = ()
@@ -232,12 +361,31 @@
         comment-lists
       })
 
-      counter(_algo-indent-key).display(n =>
+      counter(_algo-indent-key).display(n => {
+        if indent-guides != none {
+          _indent-guides(
+            line,
+            indent-guides,
+            n,
+            indent-size,
+            inset,
+            row-gutter,
+            if title == none and parameters == () {
+              true
+            } else {
+              false
+            },
+            i == 0,
+            i == lines.len() - 1,
+            _algo-current-page-key,
+          )
+        }
+
         pad(
           left: indent-size * n,
           line
         )
-      )
+      })
     }
 
     steps.push(formatted-line)
@@ -328,15 +476,13 @@
       columns: num-columns,
       column-gutter: column-gutter,
       row-gutter: row-gutter,
-      align:
-        if line-numbers and has-comments {
-          (x, _) => (right, left, left).at(x)
-        } else if line-numbers {
-          (x, _) => (right, left).at(x)
-        } else {
-          left
-        }
-      ,
+      align: if line-numbers and has-comments {
+        (x, _) => (right+horizon, left, left+horizon).at(x)
+      } else if line-numbers {
+        (x, _) => (right+horizon, left).at(x)
+      } else {
+        left
+      },
       stroke: none,
       inset: 0pt,
       ..table-data
@@ -360,11 +506,15 @@
 
 
 // Displays code in a block element.
-// Credit to @Vinaigrette#5555 on Discord.
+// Credit to Dherse on GitHub for the code
+//   to display raw text with line numbers.
 //
 // Parameters:
 //   body: Raw text.
 //   line-numbers. Whether to have line numbers.
+//   indent-guides: Stroke for indent guides.
+//   tab-size: Amount of spaces that should be considered an indent.
+//     Set to none if you intend to use tab characters.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding.
@@ -373,25 +523,73 @@
 #let code(
   body,
   line-numbers: true,
+  indent-guides: none,
+  tab-size: 2,
   row-gutter: 10pt,
   column-gutter: 10pt,
   inset: 10pt,
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
-  set par(justify: false)
-  let content = ()
-  let i = 1
+  // TODO: Make this an element function when possible.
 
-  for item in body.children {
-    if item.func() == raw {
-      for line in item.text.split("\n") {
+  set par(justify: false)
+
+  locate(
+    loc => counter(_code-current-page-key).update(loc.page())
+  )
+
+  let table-data = ()
+  let raw-children = body.children.filter(e => e.func() == raw)
+  let line-number = 1
+
+  for (i, child) in raw-children.enumerate() {
+    if child.func() == raw {
+      let lines = child.text.split("\n")
+
+      for (j, line) in lines.enumerate() {
         if line-numbers {
-          content.push(str(i))
+          table-data.push(str(line-number))
         }
 
-        content.push(raw(line, lang: item.lang))
-        i += 1
+        let raw-line = raw(line, lang: child.lang)
+
+        let content = {
+          if indent-guides != none {
+            style(styles => {
+              let indent-level = 0
+              let indent-size = 0
+
+              if tab-size == none {
+                let whitespace = line.match(regex("^(\t*).*$")).at("captures").at(0)
+                indent-level = whitespace.len()
+                indent-size = measure(raw("\t"), styles).width
+              } else {
+                let whitespace = line.match(regex("^( *).*$")).at("captures").at(0)
+                indent-level = calc.floor(whitespace.len() / tab-size)
+                indent-size = measure(raw("a" * tab-size), styles).width
+              }
+
+              _indent-guides(
+                raw-line,
+                indent-guides,
+                indent-level,
+                indent-size,
+                inset,
+                row-gutter,
+                true,
+                i == 0,
+                i == raw-children.len() - 1 and j == lines.len() - 1,
+                _code-current-page-key,
+              )
+            })
+          }
+
+          raw-line
+        }
+
+        table-data.push(content)
+        line-number += 1
       }
     }
   }
@@ -410,14 +608,12 @@
       fill: none,
       row-gutter: row-gutter,
       column-gutter: column-gutter,
-      align:
-        if line-numbers {
-          (x, _) => (right, left).at(x)
-        } else {
-          left
-        }
-      ,
-      ..content
+      align: if line-numbers {
+        (x, _) => (right+horizon, left).at(x)
+      } else {
+        left
+      },
+      ..table-data
     )
   ])
 }
