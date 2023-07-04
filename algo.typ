@@ -1,19 +1,34 @@
-// counter to track the number algo elements
-#let _algo-counter-key = "_algo-counter"
+// counter to track the number of algo and code elements
+// used as an id when accessing:
+//   _algo-comment-lists
+//   _algo-page-break-lines
+#let _algo-id-ckey = "_algo-id"
 
 // counter to track the current indent level in an algo element
-#let _algo-indent-key = "_algo-indent"
+#let _algo-indent-ckey = "_algo-indent"
 
-// counter to mark the page that each line in an algo element is on
-#let _algo-current-page-key = "_algo-current-page"
+// counter to track the number of lines in an algo element
+#let _algo-line-ckey = "_algo-line"
 
-// counter to mark the page that each line in a code element is on
-#let _code-current-page-key = "_code-current-page"
+// state value to track whether the current context is an algo element
+#let _algo-in-algo-context = state("_algo-in-algo-context", false)
+
+// state value to mark the page that each line of an
+//   algo or code element appears on
+#let _algo-current-page = state("_algo-current-page", 1)
 
 // state value for storing algo comments
-#let _algo-comment-lists = state("_algo-comment-lists", ())
+// dictionary that maps algo ids (as strings) to a dictionary that maps
+//   line indexes (as strings) to the comment appearing on that line
+#let _algo-comment-lists = state("_algo-comment-lists", (:))
 
-// list of default keywords
+// state value for storing pagebreak occurences in algo or code elements
+// dictionary that maps algo/code ids (as strings) to a list of integers,
+//   where each integer denotes a 0-indexed line that appears immediately
+//   after a page break
+#let _algo-pagebreak-line-indexes = state("_algo-pagebreak-line-indexes", (:))
+
+// list of default keywords that will be highlighted by strong-keywords
 #let _algo-default-keywords = (
   "if",
   "else",
@@ -38,9 +53,6 @@
 // Get the thickness of a stroke.
 // Credit to PgBiel on GitHub.
 #let _stroke-thickness(stroke) = {
-  // TODO: When it is possible to access the thickness of any
-  //   stroke value, remove this function.
-
   if type(stroke) in ("length", "relative length") {
     stroke
   } else if type(stroke) == "color" {
@@ -62,85 +74,182 @@
 }
 
 
-// Given a line in an algo or code, creates the
+// Given data about a line in an algo or code, creates the
 //   indent guides that should appear on that line.
+//
+// Parameters:
+//   stroke: Stroke for drawing indent guides.
+//   indent-level: The indent level on the given line.
+//   indent-size: The length of a single indent.
+//   content-height: The height of the content on the given line.
+//   block-inset: The inset of the block containing all the lines.
+//     Used when determining the length of an indent guide that appears
+//     on the top or bottom of the block.
+//   row-gutter: The gap between lines.
+//     Used when determining the length of an indent guide that appears
+//     next to other lines.
+//   is-first-line: Whether the given line is the first line in the block.
+//   is-last-line: Whether the given line is the last line in the block.
+//     If so, the length of the indent guide will depend on block-inset.
+//   is-before-page-break: Whether the given line is just before a page break.
+//     If so, the length of the indent guide will depend on block-inset.
+//   is-after-page-break. Whether the given line is just after a page break.
+//     If so, the length of the indent guide will depend on block-inset.
 #let _indent-guides(
-  line,
   stroke,
   indent-level,
   indent-size,
+  content-height,
   block-inset,
   row-gutter,
-  is-header-empty,
   is-first-line,
   is-last-line,
-  page-counter-key,
+  is-before-pagebreak,
+  is-after-pagebreak,
 ) = {
-  // TODO: Replace rect calls with line when the compiler errors
-  //   go away.
+  let stroke-width = _stroke-thickness(stroke)
 
-  let page-counter = counter(page-counter-key)
-  let guide-width = _stroke-thickness(stroke)
+  style(styles => {
+    // converting input parameters to absolute lengths
+    let content-height-pt = measure(
+      rect(width: content-height),
+      styles
+    ).width
 
-  locate(loc => {
-    let current-page = loc.page()
+    let inset-pt = measure(
+      rect(width: block-inset),
+      styles
+    ).width
 
-    style(styles => {
-      let inset-pt = measure(
-        rect(width: block-inset),
-        styles
-      ).width
+    let row-gutter-pt = measure(
+      rect(width: row-gutter),
+      styles
+    ).width
 
-      let row-gutter-pt = measure(
-        rect(width: row-gutter),
-        styles
-      ).width
+    // heuristically determine the height of the containing table cell
+    let text-height = measure(
+      [ABCDEFGHIJKLMNOPQRSTUVWXYZ],
+      styles
+    ).height
 
-      let line-height = measure(line, styles).height
+    let cell-height = calc.max(content-height-pt, text-height)
 
-      let text-height = measure(
-        [ABCDEFGHIJKLMNOPQRSTUVWXYZ],
-        styles
-      ).height
+    // lines are drawn relative to the top left of the bounding box for text
+    // backset determines how far up the starting point should be moved
+    let backset = if is-first-line {
+      0pt
+    } else if is-after-pagebreak {
+      calc.min(inset-pt, row-gutter-pt) / 2
+    } else {
+      row-gutter-pt / 2
+    }
 
-      let cell-height = calc.max(line-height, text-height)
+    // determine how far the line should extend
+    let stroke-length = backset + cell-height + (
+      if is-last-line {
+        calc.min(inset-pt / 2, cell-height / 4)
+      } else if is-before-pagebreak {
+        calc.min(inset-pt, row-gutter-pt) / 2
+      } else {
+        row-gutter-pt / 2
+      }
+    )
 
-      page-counter.display(pg => {
-        let backset = none
+    // draw the indent guide for each indent level on the given line
+    for j in range(indent-level) {
+      place(
+        dx: indent-size * j + stroke-width / 2 + 0.5pt,
+        dy: -backset,
+        line(
+          length: stroke-length,
+          angle: 90deg,
+          stroke: stroke
+        )
+      )
+    }
+  })
+}
 
-        if (
-          (
-            is-first-line and
-            is-header-empty
-          ) or
-          pg != current-page
-        ) {
-          backset = calc.min(inset-pt, row-gutter-pt) / 2
+
+// Creates the indent guides for a given line while updating relevant state.
+// Updates state for:
+//   _algo-current-page
+//   _algo-pagebreak-line-indexes
+//
+// Parameters:
+//   indent-guides: Stroke for drawing indent guides.
+//   content: The content that appears on the given line.
+//   line-index: The 0-based index of the given line.
+//   num-lines: The total number of lines in the current algo/code element.
+//   indent-level: The indent level at the given line.
+//   indent-size: The indent size used in the current algo/code element.
+//   block-inset: The inset of the current algo/code element.
+//   row-gutter: The row-gutter of the current algo/code element.
+#let _build-indent-guides(
+  indent-guides,
+  content,
+  line-index,
+  num-lines,
+  indent-level,
+  indent-size,
+  block-inset,
+  row-gutter
+) = {
+  locate(loc => style(styles => {
+    let curr-page = loc.page()
+    let prev-page = _algo-current-page.at(loc)
+    let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+    let pagebreak-index-lists = _algo-pagebreak-line-indexes.final(loc)
+
+    let content-height = measure(content, styles).height
+    let is-first-line = line-index == 0
+    let is-last-line = line-index == num-lines - 1
+    let is-before-pagebreak = (
+      id-str in pagebreak-index-lists and
+      pagebreak-index-lists.at(id-str).contains(line-index + 1)
+    )
+    let is-after-pagebreak = prev-page != curr-page
+
+    // display indent guides at the current line
+    _indent-guides(
+      indent-guides,
+      indent-level,
+      indent-size,
+      content-height,
+      block-inset,
+      row-gutter,
+      is-first-line,
+      is-last-line,
+      is-before-pagebreak,
+      is-after-pagebreak,
+    )
+
+    // state updates
+    if is-after-pagebreak {
+      // update pagebreak-lists to include the current line index
+      _algo-pagebreak-line-indexes.update(index-lists => {
+        let indexes = if id-str in index-lists {
+          index-lists.at(id-str)
         } else {
-          backset = row-gutter-pt / 2
+          ()
         }
 
-        for j in range(1, indent-level + 1) {
-          place(
-            dx: indent-size * (j - 1) + guide-width / 2 + 0.5pt,
-            dy: -backset,
-            rect(
-              width: 0pt,
-              height: cell-height + backset + (
-                if is-last-line {
-                  calc.min(inset-pt / 2, cell-height / 5)
-                } else {
-                  row-gutter-pt / 2
-                }
-              ),
-              stroke: stroke
-            )
-          )
-        }
+        indexes.push(line-index)
+        index-lists.insert(id-str, indexes)
+        index-lists
       })
-    })
+    }
 
-    page-counter.update(current-page)
+    _algo-current-page.update(curr-page)
+  }))
+}
+
+
+// Asserts that the current context is an algo element.
+// Returns the provided message if the assertion fails.
+#let _assert-in-algo(message) = {
+  _algo-in-algo-context.display(is-in-algo => {
+    assert(is-in-algo, message: message)
   })
 }
 
@@ -148,14 +257,19 @@
 // Increases indent in an algo element.
 // All uses of #i within a line will be
 //   applied to the next line.
-#let i = { counter(_algo-indent-key).step() }
+#let i = {
+  _assert-in-algo("cannot use #i outside an algo element")
+  counter(_algo-indent-ckey).step()
+}
 
 
 // Decreases indent in an algo element.
 // All uses of #d within a line will be
 //   applied to the next line.
 #let d = {
-  counter(_algo-indent-key).update(n => {
+  _assert-in-algo("cannot use #d outside an algo element")
+
+  counter(_algo-indent-ckey).update(n => {
     assert(n - 1 >= 0, message: "dedented too much")
     n - 1
   })
@@ -167,9 +281,30 @@
 // Parameters:
 //   body: Comment content.
 #let comment(body) = {
-  _algo-comment-lists.update(comment-lists => {
-    comment-lists.last().last() += body
-    comment-lists
+  _assert-in-algo("cannot use #comment outside an algo element")
+
+  locate(loc => {
+    let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+    let line-index-str = str(counter(_algo-line-ckey).at(loc).at(0))
+
+    _algo-comment-lists.update(comment-lists => {
+      let comments = if id-str in comment-lists {
+        comment-lists.at(id-str)
+      } else {
+        (:)
+      }
+
+      let ongoing-comment = if line-index-str in comments {
+        comments.at(line-index-str)
+      } else {
+        []
+      }
+
+      let comment-content = ongoing-comment + body
+      comments.insert(line-index-str, comment-content)
+      comment-lists.insert(id-str, comments)
+      comment-lists
+    })
   })
 }
 
@@ -177,7 +312,7 @@
 // Displays an algorithm in a block element.
 //
 // Parameters:
-//   body: Algorithm text.
+//   body: Algorithm content.
 //   title: Algorithm title.
 //   Parameters: Array of parameters.
 //   line-numbers: Whether to have line numbers.
@@ -210,24 +345,13 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
-  // TODO: Make this an element function when possible.
-  // TODO: When it is possible to make this an element function,
-  //   change comment state to only track comments for most
-  //   recent instance of algo, and query state at first algo
-  //   after current location.
-
-  set par(justify: false)
-
-  counter(_algo-counter-key).step()
-  counter(_algo-indent-key).update(0)
-
-  _algo-comment-lists.update(comment-lists => {
-    comment-lists.push(())
-    comment-lists
-  })
+  counter(_algo-id-ckey).step()
+  counter(_algo-line-ckey).update(0)
+  counter(_algo-indent-ckey).update(0)
+  _algo-in-algo-context.update(true)
 
   locate(
-    loc => counter(_algo-current-page-key).update(loc.page())
+    loc => _algo-current-page.update(loc.page())
   )
 
   // convert keywords to content values
@@ -239,50 +363,13 @@
     }
   })
 
-  // sorts body.children such that, between portions of content,
-  // indentation changes always occur before whitespace
-  // makes placement of indentation commands more flexible in body
-  // TODO: Remove this, probably.
-  let sorted-children = {
-    let whitespaces = ()
-    let indent-updates = ()
-    let sorted-elems = ()
-
-    for child in body.children {
-      if (
-        child == [ ]
-        or child == linebreak()
-        or child == parbreak()
-      ) {
-        whitespaces.push(child)
-        sorted-elems += indent-updates
-        indent-updates = ()
-      } else if repr(child).starts-with(
-        "update(counter: counter(\"" + _algo-indent-key + "\")"
-      ) {
-        indent-updates.push(child)
-      } else {
-        sorted-elems += indent-updates
-        sorted-elems += whitespaces
-        sorted-elems.push(child)
-        indent-updates = ()
-        whitespaces = ()
-      }
-    }
-
-    sorted-elems += indent-updates
-    sorted-elems += whitespaces
-    sorted-elems
-  }
-
   // concatenate consecutive non-whitespace elements
-  // i.e. just combine everything that definitely aren't
-  // on separate lines
+  // i.e. just combine everything that definitely aren't on separate lines
   let text-and-whitespaces = {
     let joined-children = ()
     let temp = []
 
-    for child in sorted-children {
+    for child in body.children {
       if (
         child == [ ]
         or child == linebreak()
@@ -318,7 +405,7 @@
     let line-parts = []
     let num-linebreaks = 0
 
-    for (i, line) in text-and-breaks.enumerate() {
+    for line in text-and-breaks {
       if line == linebreak() {
         if line-parts != [] {
           joined-lines.push(line-parts)
@@ -343,11 +430,12 @@
     joined-lines
   }
 
-  // build text and comment lists
-  let steps = ()
+  // build text, comment lists, and indent-guides
+  let algo-steps = ()
 
   for (i, line) in lines.enumerate() {
     let formatted-line = {
+      // bold keywords
       show regex("\S+"): it => {
         if strong-keywords and it in keywords {
           strong(it)
@@ -356,39 +444,30 @@
         }
       }
 
-      _algo-comment-lists.update(comment-lists => {
-        comment-lists.last().push([])
-        comment-lists
-      })
-
-      counter(_algo-indent-key).display(n => {
+      counter(_algo-indent-ckey).display(indent-level => {
         if indent-guides != none {
-          _indent-guides(
-            line,
+          _build-indent-guides(
             indent-guides,
-            n,
+            line,
+            i,
+            lines.len(),
+            indent-level,
             indent-size,
             inset,
-            row-gutter,
-            if title == none and parameters == () {
-              true
-            } else {
-              false
-            },
-            i == 0,
-            i == lines.len() - 1,
-            _algo-current-page-key,
+            row-gutter
           )
         }
 
         pad(
-          left: indent-size * n,
+          left: indent-size * indent-level,
           line
         )
       })
+
+      counter(_algo-line-ckey).step()
     }
 
-    steps.push(formatted-line)
+    algo-steps.push(formatted-line)
   }
 
   // build algorithm header
@@ -436,38 +515,63 @@
 
   // build table
   let algo-table = locate(loc => {
-    let comment-list = _algo-comment-lists.final(loc).at(
-      counter(_algo-counter-key).at(loc).at(0) - 1
-    )
+    let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+    let comment-lists = _algo-comment-lists.final(loc)
+    let has-comments = comment-lists.keys().contains(id-str)
 
-    let num-columns = 1
-    let has-comments = comment-list.any(e => e != [])
+    let comment-contents = if has-comments {
+      let comments = comment-lists.at(id-str)
 
-    if line-numbers and has-comments {
-      num-columns = 3
-    } else if line-numbers or has-comments {
-      num-columns = 2
+      range(algo-steps.len()).map(i => {
+        let index-str = str(i)
+
+        if index-str in comments {
+          comments.at(index-str)
+        } else {
+          none
+        }
+      })
+    } else {
+      none
+    }
+
+    let num-columns = 1 + int(line-numbers) + int(has-comments)
+
+    let align = {
+      let alignments = ()
+
+      if line-numbers {
+        alignments.push(right + horizon)
+      }
+
+      alignments.push(left)
+
+      if has-comments {
+        alignments.push(left + horizon)
+      }
+
+      (x, _) => alignments.at(x)
     }
 
     let table-data = ()
 
-    for (i, line) in steps.enumerate() {
+    for (i, line) in algo-steps.enumerate() {
       if line-numbers {
         let line-number = i + 1
-        table-data.push([#line-number])
+        table-data.push(str(line-number))
       }
 
       table-data.push(line)
 
       if has-comments {
-        if comment-list.at(i) != [] {
+        if comment-contents.at(i) == none {
+          table-data.push([])
+        } else {
           table-data.push({
             set text(fill: comment-color)
             comment-prefix
-            comment-list.at(i)
+            comment-contents.at(i)
           })
-        } else {
-          table-data.push([])
         }
       }
     }
@@ -476,19 +580,15 @@
       columns: num-columns,
       column-gutter: column-gutter,
       row-gutter: row-gutter,
-      align: if line-numbers and has-comments {
-        (x, _) => (right+horizon, left, left+horizon).at(x)
-      } else if line-numbers {
-        (x, _) => (right+horizon, left).at(x)
-      } else {
-        left
-      },
+      align: align,
       stroke: none,
       inset: 0pt,
       ..table-data
     )
   })
 
+  // display content
+  set par(justify: false)
   align(center, block(
     width: auto,
     height: auto,
@@ -502,6 +602,8 @@
     #v(weak: true, row-gutter)
     #align(left, algo-table)
   ])
+
+  _algo-in-algo-context.update(false)
 }
 
 
@@ -531,69 +633,69 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
-  // TODO: Make this an element function when possible.
-
-  set par(justify: false)
-
+  counter(_algo-id-ckey).step()
   locate(
-    loc => counter(_code-current-page-key).update(loc.page())
+    loc => _algo-current-page.update(loc.page())
   )
 
   let table-data = ()
   let raw-children = body.children.filter(e => e.func() == raw)
-  let line-number = 1
+  let lines-by-child = raw-children.map(e => e.text.split("\n"))
+  let num-lines = lines-by-child.map(e => e.len()).sum()
+  let line-index = 0
 
-  for (i, child) in raw-children.enumerate() {
-    if child.func() == raw {
-      let lines = child.text.split("\n")
-
-      for (j, line) in lines.enumerate() {
-        if line-numbers {
-          table-data.push(str(line-number))
-        }
-
-        let raw-line = raw(line, lang: child.lang)
-
-        let content = {
-          if indent-guides != none {
-            style(styles => {
-              let indent-level = 0
-              let indent-size = 0
-
-              if tab-size == none {
-                let whitespace = line.match(regex("^(\t*).*$")).at("captures").at(0)
-                indent-level = whitespace.len()
-                indent-size = measure(raw("\t"), styles).width
-              } else {
-                let whitespace = line.match(regex("^( *).*$")).at("captures").at(0)
-                indent-level = calc.floor(whitespace.len() / tab-size)
-                indent-size = measure(raw("a" * tab-size), styles).width
-              }
-
-              _indent-guides(
-                raw-line,
-                indent-guides,
-                indent-level,
-                indent-size,
-                inset,
-                row-gutter,
-                true,
-                i == 0,
-                i == raw-children.len() - 1 and j == lines.len() - 1,
-                _code-current-page-key,
-              )
-            })
-          }
-
-          raw-line
-        }
-
-        table-data.push(content)
-        line-number += 1
+  for (i, lines) in lines-by-child.enumerate() {
+    for line in lines {
+      if line-numbers {
+        table-data.push(str(line-index + 1))
       }
+
+      let content = {
+        let raw-line = raw(line, lang: raw-children.at(i).lang)
+
+        if indent-guides != none {
+          style(styles => {
+            let (indent-level, indent-size) = if tab-size == none {
+              let whitespace = line.match(regex("^(\t*).*$"))
+                                    .at("captures")
+                                    .at(0)
+              (
+                whitespace.len(),
+                measure(raw("\t"), styles).width
+              )
+            } else {
+              let whitespace = line.match(regex("^( *).*$"))
+                                    .at("captures")
+                                    .at(0)
+              (
+                calc.floor(whitespace.len() / tab-size),
+                measure(raw("a" * tab-size), styles).width
+              )
+            }
+
+            _build-indent-guides(
+              indent-guides,
+              raw-line,
+              line-index,
+              lines.len(),
+              indent-level,
+              indent-size,
+              inset,
+              row-gutter
+            )
+          })
+        }
+
+        raw-line
+      }
+
+      table-data.push(content)
+      line-index += 1
     }
   }
 
+  // display content
+  set par(justify: false)
   align(center, block(
     stroke: stroke,
     inset: inset,

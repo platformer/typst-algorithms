@@ -4,9 +4,9 @@
 
 
 #algo(
-  title: "Fib",             // title and parameters are optional
+  title: "Fib",
   parameters: ("n",),
-  strong-keywords: true     // bold keywords
+  strong-keywords: true     // display keywords in bold
 )[
   if $n < 0$:#i\            // use #i to indent the following lines
     return null#d\          // use #d to to dedent the following lines
@@ -34,7 +34,7 @@
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$  
+    return $x+y$
 ]
 
 
@@ -50,9 +50,11 @@
   strong-keywords: true,
   comment-prefix: [#sym.triangle.stroked.r ],
   comment-color: rgb(100%, 0%, 0%),
-  inset: 5pt,
+  indent-size: 15pt,
+  indent-guides: 1pt + gray,
   row-gutter: 5pt,
   column-gutter: 5pt,
+  inset: 5pt,
   stroke: 2pt + black,
   fill: none,
 )[
@@ -68,7 +70,7 @@
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$  
+    return $x+y$
 ]
 
 
@@ -91,18 +93,21 @@
 
 
 #code(
-  inset: 5pt,
+  tab-size: 4,  // sets how many spaces to interpret as one indent
+                // use none if you are using real tab characters
+  indent-guides: 1pt + gray,
   row-gutter: 5pt,
   column-gutter: 5pt,
+  inset: 5pt,
   stroke: 2pt + black,
   fill: none,
 )[
   ```py
   def fib(n):
-    if n < 0:
-      return None
-    if n == 0 or n == 1:        # this comment is
-      return n                  # normal raw text
-    return fib(n-1) + fib(n-2)
+      if n < 0:
+          return None
+      if n == 0 or n == 1:        # this comment is
+          return n                # normal raw text
+      return fib(n-1) + fib(n-2)
   ```
 ]
