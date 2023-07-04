@@ -16,14 +16,13 @@ Here's a basic use of `algo`:
 #algo(
   title: "Fib",
   parameters: ("n",),
-  strong-keywords: true  // bold keywords
+  strong-keywords: true     // display keywords in bold
 )[
-  if $n < 0$:#i\    // #i indents the following lines
-    return null#d\  // #d dedents the following lines
+  if $n < 0$:#i\            // use #i to indent the following lines
+    return null#d\          // use #d to to dedent the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
-  return #smallcaps("Fib")$(n-1) +$
-         #smallcaps("Fib")$(n-2)$
+  return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
 ]
 ```
 
@@ -49,7 +48,7 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$  
+    return $x+y$
 ]
 ```
 
@@ -61,17 +60,19 @@ And here's `algo` with some more styling options:
 
 ```typst
 #algo(
-  title: [                  // title and parameters
-    #set text(size: 15pt)   // can be content
+  title: [                    // note that title and parameters
+    #set text(size: 15pt)     // can be content
     #emph(smallcaps("Fib"))
   ],
   parameters: ([#math.italic("n")],),
   strong-keywords: true,
   comment-prefix: [#sym.triangle.stroked.r ],
   comment-color: rgb(100%, 0%, 0%),
-  inset: 5pt,
+  indent-size: 15pt,
+  indent-guides: 1pt + gray,
   row-gutter: 5pt,
   column-gutter: 5pt,
+  inset: 5pt,
   stroke: 2pt + black,
   fill: none,
 )[
@@ -87,11 +88,11 @@ And here's `algo` with some more styling options:
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$  
+    return $x+y$
 ]
 ```
 
-<img src="https://user-images.githubusercontent.com/40146328/235323500-00ee9771-53d0-4d9e-811b-f1729832155e.png" width="300px" />
+<img src="https://github.com/platformer/typst-algorithms/assets/40146328/89f80b5d-bdb2-420a-935d-24f43ca597d8" width="300px" />
 
 <br />
 
@@ -118,24 +119,27 @@ And here's `code` with some styling options:
 
 ````typst
 #code(
-  inset: 5pt,
+  tab-size: 4,  // sets how many spaces to interpret as one indent
+                // use none if you are using real tab characters
+  indent-guides: 1pt + gray,
   row-gutter: 5pt,
   column-gutter: 5pt,
+  inset: 5pt,
   stroke: 2pt + black,
   fill: none,
 )[
   ```py
   def fib(n):
-    if n < 0:
-      return None
-    if n == 0 or n == 1:        # this comment is
-      return n                  # normal raw text
-    return fib(n-1) + fib(n-2)
+      if n < 0:
+          return None
+      if n == 0 or n == 1:        # this comment is
+          return n                # normal raw text
+      return fib(n-1) + fib(n-2)
   ```
 ]
 ````
 
-<img src="https://user-images.githubusercontent.com/40146328/235324247-08438d8b-822a-4795-a78b-a56b95a1c0c0.png" width="400px"/>
+<img src="https://github.com/platformer/typst-algorithms/assets/40146328/c091ac43-6861-40bc-8046-03ea285712c3" width="400px"/>
 
 ## Contributing
 
