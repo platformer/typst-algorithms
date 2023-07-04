@@ -34,7 +34,7 @@
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$
+  return $x+y$
 ]
 
 
@@ -70,7 +70,7 @@
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$
+  return $x+y$
 ]
 
 

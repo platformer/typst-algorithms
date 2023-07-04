@@ -48,7 +48,7 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$
+  return $x+y$
 ]
 ```
 
@@ -88,7 +88,7 @@ And here's `algo` with some more styling options:
     $x <- y$\
     $y <- z$#d\
     \
-    return $x+y$
+  return $x+y$
 ]
 ```
 
