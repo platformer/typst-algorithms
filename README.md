@@ -1,9 +1,15 @@
-# typst-algorithms
+# Algo
 
-Typst module for writing algorithms. To use it, add the `algo.typ` file to your project. Then, import everything from `algo.typ` into your document:
+A Typst package for writing algorithms. On Typst v0.6.0+ you can import the `algo` package:
 
 ```typst
-#import "algo.typ" : *
+#import "@preview/algo:0.2.0": algo, i, d, comment, code
+```
+
+Otherwise, add the `algo.typ` file to your project and import it as normal:
+
+```typst
+#import "algo.typ" : algo, i, d, comment, code
 ```
 
 Use the `algo` function for writing pseudocode and the `code` function for writing code blocks with line numbers. Check out the examples below to see how they work. `algo.typ` also has comments explaining the options each function has.
@@ -27,8 +33,7 @@ Here's a basic use of `algo`:
 ```
 
 <img src="https://user-images.githubusercontent.com/40146328/235323240-e59ed7e2-ebb6-4b80-8742-eb171dd3721e.png" width="400px" />
-
-<br />
+&nbsp;
 
 Here's a use of `algo` without a title, parameters, line numbers, or syntax highlighting:
 
@@ -53,10 +58,9 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
 ```
 
 <img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" width="300px" />
+&nbsp;
 
-<br />
-
-And here's `algo` with some more styling options:
+And here's `algo` with more styling options:
 
 ```typst
 #algo(
@@ -94,7 +98,7 @@ And here's `algo` with some more styling options:
 
 <img src="https://github.com/platformer/typst-algorithms/assets/40146328/89f80b5d-bdb2-420a-935d-24f43ca597d8" width="300px" />
 
-<br />
+&nbsp;
 
 Here's a basic use of `code`:
 
@@ -112,8 +116,7 @@ Here's a basic use of `code`:
 ````
 
 <img src="https://user-images.githubusercontent.com/40146328/235324088-a3596e0b-af90-4da3-b326-2de11158baac.png" width="400px"/>
-
-<br />
+&nbsp;
 
 And here's `code` with some styling options:
 
@@ -143,4 +146,4 @@ And here's `code` with some styling options:
 
 ## Contributing
 
-PRs are welcome! And if you encounter any bugs or have any requests/ideas, feel free to open an issue!
+PRs are welcome! And if you encounter any bugs or have any requests/ideas, feel free to open an issue.
