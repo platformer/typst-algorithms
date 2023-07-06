@@ -33,7 +33,8 @@ Here's a basic use of `algo`:
 ```
 
 <img src="https://user-images.githubusercontent.com/40146328/235323240-e59ed7e2-ebb6-4b80-8742-eb171dd3721e.png" width="400px" />
-&nbsp;
+
+<br />
 
 Here's a use of `algo` without a title, parameters, line numbers, or syntax highlighting:
 
@@ -58,7 +59,8 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
 ```
 
 <img src="https://user-images.githubusercontent.com/40146328/235323261-d6e7a42c-ffb7-4c3a-bd2a-4c8fc2df5f36.png" width="300px" />
-&nbsp;
+
+<br />
 
 And here's `algo` with more styling options:
 
@@ -116,7 +118,8 @@ Here's a basic use of `code`:
 ````
 
 <img src="https://user-images.githubusercontent.com/40146328/235324088-a3596e0b-af90-4da3-b326-2de11158baac.png" width="400px"/>
-&nbsp;
+
+<br />
 
 And here's `code` with some styling options:
 
