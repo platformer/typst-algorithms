@@ -3,6 +3,6 @@ name = "algo"
 version = "0.2.0"
 authors = ["platformer <https://github.com/platformer>"]
 license = "MIT"
-description = "A library for typesetting algorithms"
+description = "Beautifully typeset algorithms."
 entrypoint = "algo.typ"
 repository = "https://github.com/platformer/typst-algorithms"
