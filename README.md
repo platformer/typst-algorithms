@@ -1,6 +1,6 @@
 # Algo
 
-A Typst package for writing algorithms. On Typst v0.6.0+ you can import the `algo` package:
+A Typst library for writing algorithms. On Typst v0.6.0+ you can import the `algo` package:
 
 ```typst
 #import "@preview/algo:0.2.0": algo, i, d, comment, code
