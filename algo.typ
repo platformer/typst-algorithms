@@ -128,7 +128,7 @@
 
     // heuristically determine the height of the containing table cell
     let text-height = measure(
-      [ABCDEFGHIJKLMNOPQRSTUVWXYZ],
+      [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ],
       styles
     ).height
 
