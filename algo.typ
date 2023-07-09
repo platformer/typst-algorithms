@@ -196,12 +196,19 @@
   row-gutter
 ) = {
   locate(loc => style(styles => {
-    let curr-page = loc.page()
-    let prev-page = _algo-current-page.at(loc)
     let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+    let line-index-str = str(line-index)
+    let prev-page = _algo-current-page.at(loc)
+    let curr-page = loc.page()
     let pagebreak-index-lists = _algo-pagebreak-line-indexes.final(loc)
+    let comment-lists = _algo-comment-lists.final(loc)
+    let comment-content = comment-lists.at(id-str, default: (:))
+                                       .at(line-index-str, default: [])
 
-    let content-height = measure(content, styles).height
+    let content-height = calc.max(
+      measure(content, styles).height,
+      measure(comment-content, styles).height
+    )
     let is-first-line = line-index == 0
     let is-last-line = line-index == num-lines - 1
     let is-before-pagebreak = (
@@ -228,12 +235,7 @@
     if is-after-pagebreak {
       // update pagebreak-lists to include the current line index
       _algo-pagebreak-line-indexes.update(index-lists => {
-        let indexes = if id-str in index-lists {
-          index-lists.at(id-str)
-        } else {
-          ()
-        }
-
+        let indexes = index-lists.at(id-str, default: ())
         indexes.push(line-index)
         index-lists.insert(id-str, indexes)
         index-lists
@@ -288,18 +290,8 @@
     let line-index-str = str(counter(_algo-line-ckey).at(loc).at(0))
 
     _algo-comment-lists.update(comment-lists => {
-      let comments = if id-str in comment-lists {
-        comment-lists.at(id-str)
-      } else {
-        (:)
-      }
-
-      let ongoing-comment = if line-index-str in comments {
-        comments.at(line-index-str)
-      } else {
-        []
-      }
-
+      let comments = comment-lists.at(id-str, default: (:))
+      let ongoing-comment = comments.at(line-index-str, default: [])
       let comment-content = ongoing-comment + body
       comments.insert(line-index-str, comment-content)
       comment-lists.insert(id-str, comments)
@@ -657,16 +649,16 @@
           style(styles => {
             let (indent-level, indent-size) = if tab-size == none {
               let whitespace = line.match(regex("^(\t*).*$"))
-                                    .at("captures")
-                                    .at(0)
+                                   .at("captures")
+                                   .at(0)
               (
                 whitespace.len(),
                 measure(raw("\t"), styles).width
               )
             } else {
               let whitespace = line.match(regex("^( *).*$"))
-                                    .at("captures")
-                                    .at(0)
+                                   .at("captures")
+                                   .at(0)
               (
                 calc.floor(whitespace.len() / tab-size),
                 measure(raw("a" * tab-size), styles).width
