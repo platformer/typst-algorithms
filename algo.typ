@@ -1,7 +1,6 @@
-// counter to track the number of algo and code elements
+// counter to track the number of algo elements
 // used as an id when accessing:
 //   _algo-comment-lists
-//   _algo-page-break-lines
 #let _algo-id-ckey = "_algo-id"
 
 // counter to track the current indent level in an algo element
@@ -13,20 +12,10 @@
 // state value to track whether the current context is an algo element
 #let _algo-in-algo-context = state("_algo-in-algo-context", false)
 
-// state value to mark the page that each line of an
-//   algo or code element appears on
-#let _algo-current-page = state("_algo-current-page", 1)
-
 // state value for storing algo comments
 // dictionary that maps algo ids (as strings) to a dictionary that maps
 //   line indexes (as strings) to the comment appearing on that line
 #let _algo-comment-lists = state("_algo-comment-lists", (:))
-
-// state value for storing pagebreak occurences in algo or code elements
-// dictionary that maps algo/code ids (as strings) to a list of integers,
-//   where each integer denotes a 0-indexed line that appears immediately
-//   after a page break
-#let _algo-pagebreak-line-indexes = state("_algo-pagebreak-line-indexes", (:))
 
 // list of default keywords that will be highlighted by strong-keywords
 #let _algo-default-keywords = (
@@ -91,10 +80,6 @@
 //   is-first-line: Whether the given line is the first line in the block.
 //   is-last-line: Whether the given line is the last line in the block.
 //     If so, the length of the indent guide will depend on block-inset.
-//   is-before-page-break: Whether the given line is just before a page break.
-//     If so, the length of the indent guide will depend on block-inset.
-//   is-after-page-break. Whether the given line is just after a page break.
-//     If so, the length of the indent guide will depend on block-inset.
 #let _indent-guides(
   stroke,
   indent-level,
@@ -103,9 +88,7 @@
   block-inset,
   row-gutter,
   is-first-line,
-  is-last-line,
-  is-before-pagebreak,
-  is-after-pagebreak,
+  is-last-line
 ) = {
   let stroke-width = _stroke-thickness(stroke)
 
@@ -138,8 +121,6 @@
     // backset determines how far up the starting point should be moved
     let backset = if is-first-line {
       0pt
-    } else if is-after-pagebreak {
-      calc.min(inset-pt, row-gutter-pt) / 2
     } else {
       row-gutter-pt / 2
     }
@@ -148,8 +129,6 @@
     let stroke-length = backset + cell-height + (
       if is-last-line {
         calc.min(inset-pt / 2, cell-height / 4)
-      } else if is-before-pagebreak {
-        calc.min(inset-pt, row-gutter-pt) / 2
       } else {
         row-gutter-pt / 2
       }
@@ -171,10 +150,8 @@
 }
 
 
-// Creates the indent guides for a given line while updating relevant state.
-// Updates state for:
-//   _algo-current-page
-//   _algo-pagebreak-line-indexes
+// Given the content of a given line, calculates size of the content
+//   and creates indent guides of sufficient length.
 //
 // Parameters:
 //   indent-guides: Stroke for drawing indent guides.
@@ -198,9 +175,6 @@
   locate(loc => style(styles => {
     let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
     let line-index-str = str(line-index)
-    let prev-page = _algo-current-page.at(loc)
-    let curr-page = loc.page()
-    let pagebreak-index-lists = _algo-pagebreak-line-indexes.final(loc)
     let comment-lists = _algo-comment-lists.final(loc)
     let comment-content = comment-lists.at(id-str, default: (:))
                                        .at(line-index-str, default: [])
@@ -209,13 +183,9 @@
       measure(content, styles).height,
       measure(comment-content, styles).height
     )
+
     let is-first-line = line-index == 0
     let is-last-line = line-index == num-lines - 1
-    let is-before-pagebreak = (
-      id-str in pagebreak-index-lists and
-      pagebreak-index-lists.at(id-str).contains(line-index + 1)
-    )
-    let is-after-pagebreak = prev-page != curr-page
 
     // display indent guides at the current line
     _indent-guides(
@@ -226,23 +196,8 @@
       block-inset,
       row-gutter,
       is-first-line,
-      is-last-line,
-      is-before-pagebreak,
-      is-after-pagebreak,
+      is-last-line
     )
-
-    // state updates
-    if is-after-pagebreak {
-      // update pagebreak-lists to include the current line index
-      _algo-pagebreak-line-indexes.update(index-lists => {
-        let indexes = index-lists.at(id-str, default: ())
-        indexes.push(line-index)
-        index-lists.insert(id-str, indexes)
-        index-lists
-      })
-    }
-
-    _algo-current-page.update(curr-page)
   }))
 }
 
@@ -341,10 +296,6 @@
   counter(_algo-line-ckey).update(0)
   counter(_algo-indent-ckey).update(0)
   _algo-in-algo-context.update(true)
-
-  locate(
-    loc => _algo-current-page.update(loc.page())
-  )
 
   // convert keywords to content values
   keywords = keywords.map(e => {
@@ -588,7 +539,7 @@
     stroke: stroke,
     inset: inset,
     outset: 0pt,
-    breakable: true
+    breakable: false
   )[
     #algo-header
     #v(weak: true, row-gutter)
@@ -600,8 +551,6 @@
 
 
 // Displays code in a block element.
-// Credit to Dherse on GitHub for the code
-//   to display raw text with line numbers.
 //
 // Parameters:
 //   body: Raw text.
@@ -625,11 +574,6 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%)
 ) = {
-  counter(_algo-id-ckey).step()
-  locate(
-    loc => _algo-current-page.update(loc.page())
-  )
-
   let table-data = ()
   let raw-children = body.children.filter(e => e.func() == raw)
   let lines-by-child = raw-children.map(e => e.text.split("\n"))
@@ -693,7 +637,7 @@
     inset: inset,
     fill: fill,
     width: auto,
-    breakable: true
+    breakable: false
   )[
     #table(
       columns: if line-numbers {2} else {1},
