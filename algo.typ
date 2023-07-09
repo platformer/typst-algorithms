@@ -88,7 +88,7 @@
   block-inset,
   row-gutter,
   is-first-line,
-  is-last-line
+  is-last-line,
 ) = {
   let stroke-width = _stroke-thickness(stroke)
 
@@ -170,7 +170,7 @@
   indent-level,
   indent-size,
   block-inset,
-  row-gutter
+  row-gutter,
 ) = {
   locate(loc => style(styles => {
     let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
@@ -275,6 +275,8 @@
 //   inset: Inner padding.
 //   fill: Fill color.
 //   stroke: Border stroke.
+//   breakable: Whether the element should be breakable across pages.
+//     Warning: indent guides may look off when broken across pages.
 #let algo(
   body,
   title: none,
@@ -290,7 +292,8 @@
   column-gutter: 10pt,
   inset: 10pt,
   fill: rgb(98%, 98%, 98%),
-  stroke: 1pt + rgb(50%, 50%, 50%)
+  stroke: 1pt + rgb(50%, 50%, 50%),
+  breakable: false,
 ) = {
   counter(_algo-id-ckey).step()
   counter(_algo-line-ckey).update(0)
@@ -539,7 +542,7 @@
     stroke: stroke,
     inset: inset,
     outset: 0pt,
-    breakable: false
+    breakable: breakable
   )[
     #algo-header
     #v(weak: true, row-gutter)
@@ -563,6 +566,8 @@
 //   inset: Inner padding.
 //   fill: Fill color.
 //   stroke: Border stroke.
+//   breakable: Whether the element should be breakable across pages.
+//     Warning: indent guides may look off when broken across pages.
 #let code(
   body,
   line-numbers: true,
@@ -572,7 +577,8 @@
   column-gutter: 10pt,
   inset: 10pt,
   fill: rgb(98%, 98%, 98%),
-  stroke: 1pt + rgb(50%, 50%, 50%)
+  stroke: 1pt + rgb(50%, 50%, 50%),
+  breakable: false,
 ) = {
   let table-data = ()
   let raw-children = body.children.filter(e => e.func() == raw)
@@ -637,7 +643,7 @@
     inset: inset,
     fill: fill,
     width: auto,
-    breakable: false
+    breakable: breakable
   )[
     #table(
       columns: if line-numbers {2} else {1},
