@@ -5,8 +5,7 @@
 
 #algo(
   title: "Fib",
-  parameters: ("n",),
-  strong-keywords: true     // display keywords in bold
+  parameters: ("n",)
 )[
   if $n < 0$:#i\            // use #i to indent the following lines
     return null#d\          // use #d to to dedent the following lines
@@ -20,7 +19,8 @@
 
 
 #algo(
-  line-numbers: false
+  line-numbers: false,
+  strong-keywords: false
 )[
   if $n < 0$:#i\
     return null#d\
@@ -47,7 +47,6 @@
     #emph(smallcaps("Fib"))
   ],
   parameters: ([#math.italic("n")],),
-  strong-keywords: true,
   comment-prefix: [#sym.triangle.stroked.r ],
   comment-color: rgb(100%, 0%, 0%),
   indent-size: 15pt,

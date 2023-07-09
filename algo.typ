@@ -282,7 +282,7 @@
   title: none,
   parameters: (),
   line-numbers: true,
-  strong-keywords: false,
+  strong-keywords: true,
   keywords: _algo-default-keywords,
   comment-prefix: "// ",
   comment-color: rgb(45%, 45%, 45%),
