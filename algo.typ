@@ -682,7 +682,7 @@
 //
 // Parameters:
 //   body: Raw text.
-//   line-numbers. Whether to have line numbers.
+//   line-numbers: Whether to have line numbers.
 //   indent-guides: Stroke for indent guides.
 //   tab-size: Amount of spaces that should be considered an indent.
 //     Set to none if you intend to use tab characters.
