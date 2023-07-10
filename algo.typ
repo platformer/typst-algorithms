@@ -22,7 +22,7 @@
 //   line indexes (as strings) to the comment appearing on that line
 #let _algo-comment-lists = state("_algo-comment-lists", (:))
 
-// state value for storing pagebreak occurences in algo or code elements
+// state value for storing pagebreak occurrences in algo or code elements
 // dictionary that maps algo/code ids (as strings) to a list of integers,
 //   where each integer denotes a 0-indexed line that appears immediately
 //   after a page break
