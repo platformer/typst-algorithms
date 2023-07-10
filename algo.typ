@@ -724,7 +724,11 @@
       }
 
       let content = {
-        let raw-line = raw(line, lang: raw-children.at(i).lang)
+        let raw-line = if raw-children.at(i).has("lang") {
+          raw(line, lang: raw-children.at(i).lang)
+        } else {
+          raw(line)
+        }
 
         if indent-guides != none {
           style(styles => {
