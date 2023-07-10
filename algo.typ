@@ -69,12 +69,12 @@
 // Parameters:
 //   stroke: Stroke for drawing indent guides.
 //   indent-level: The indent level on the given line.
-//   indent-size: The length of a single indent.
-//   content-height: The height of the content on the given line.
-//   block-inset: The inset of the block containing all the lines.
+//   indent-size: The absolute length of a single indent.
+//   row-height: The absolute height of the containing row of the given line.
+//   block-inset: The absolute inset of the block containing all the lines.
 //     Used when determining the length of an indent guide that appears
 //     on the top or bottom of the block.
-//   row-gutter: The gap between lines.
+//   row-gutter: The absolute gap between lines.
 //     Used when determining the length of an indent guide that appears
 //     next to other lines.
 //   is-first-line: Whether the given line is the first line in the block.
@@ -84,7 +84,7 @@
   stroke,
   indent-level,
   indent-size,
-  content-height,
+  row-height,
   block-inset,
   row-gutter,
   is-first-line,
@@ -92,77 +92,58 @@
 ) = {
   let stroke-width = _stroke-thickness(stroke)
 
-  style(styles => {
-    // converting input parameters to absolute lengths
-    let content-height-pt = measure(
-      rect(width: content-height),
-      styles
-    ).width
+  // lines are drawn relative to the top left of the bounding box for text
+  // backset determines how far up the starting point should be moved
+  let backset = if is-first-line {
+    0pt
+  } else {
+    row-gutter / 2
+  }
 
-    let inset-pt = measure(
-      rect(width: block-inset),
-      styles
-    ).width
-
-    let row-gutter-pt = measure(
-      rect(width: row-gutter),
-      styles
-    ).width
-
-    // heuristically determine the height of the containing table cell
-    let text-height = measure(
-      [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ],
-      styles
-    ).height
-
-    let cell-height = calc.max(content-height-pt, text-height)
-
-    // lines are drawn relative to the top left of the bounding box for text
-    // backset determines how far up the starting point should be moved
-    let backset = if is-first-line {
-      0pt
+  // determine how far the line should extend
+  let stroke-length = backset + row-height + (
+    if is-last-line {
+      calc.min(block-inset / 2, row-height / 4)
     } else {
-      row-gutter-pt / 2
+      row-gutter / 2
     }
+  )
 
-    // determine how far the line should extend
-    let stroke-length = backset + cell-height + (
-      if is-last-line {
-        calc.min(inset-pt / 2, cell-height / 4)
-      } else {
-        row-gutter-pt / 2
-      }
-    )
-
-    // draw the indent guide for each indent level on the given line
-    for j in range(indent-level) {
-      place(
-        dx: indent-size * j + stroke-width / 2 + 0.5pt,
-        dy: -backset,
-        line(
-          length: stroke-length,
-          angle: 90deg,
-          stroke: stroke
-        )
+  // draw the indent guide for each indent level on the given line
+  for j in range(indent-level) {
+    place(
+      dx: indent-size * j + stroke-width / 2 + 0.5pt,
+      dy: -backset,
+      line(
+        length: stroke-length,
+        angle: 90deg,
+        stroke: stroke
       )
-    }
-  })
+    )
+  }
 }
 
 
-// Given the content of a given line, calculates size of the content
+// Create indent guides for a given line of an algo element.
+// Given the content of the line, calculates size of the content
 //   and creates indent guides of sufficient length.
 //
 // Parameters:
 //   indent-guides: Stroke for drawing indent guides.
-//   content: The content that appears on the given line.
+//   content: The main text that appears on the given line.
 //   line-index: The 0-based index of the given line.
-//   num-lines: The total number of lines in the current algo/code element.
+//   num-lines: The total number of lines in the current element.
 //   indent-level: The indent level at the given line.
-//   indent-size: The indent size used in the current algo/code element.
-//   block-inset: The inset of the current algo/code element.
-//   row-gutter: The row-gutter of the current algo/code element.
-#let _build-indent-guides(
+//   indent-size: The indent size used in the current element.
+//   block-inset: The inset of the current element.
+//   row-gutter: The row-gutter of the current element.
+//   main-text-styles: Dictionary of styling options for the algorithm steps.
+//     Supports any parameter in Typst's native text function.
+//   comment-styles: Dictionary of styling options for comment text.
+//     Supports any parameter in Typst's native text function.
+//   line-number-styles: Dictionary of styling options for the line numbers.
+//     Supports any parameter in Typst's native text function.
+#let _algo-indent-guides(
   indent-guides,
   content,
   line-index,
@@ -171,6 +152,9 @@
   indent-size,
   block-inset,
   row-gutter,
+  main-text-styles,
+  comment-styles,
+  line-number-styles,
 ) = {
   locate(loc => style(styles => {
     let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
@@ -179,10 +163,52 @@
     let comment-content = comment-lists.at(id-str, default: (:))
                                        .at(line-index-str, default: [])
 
-    let content-height = calc.max(
-      measure(content, styles).height,
-      measure(comment-content, styles).height
+    // heuristically determine the height of the containing table row
+    let row-height = calc.max(
+      // height of main content
+      measure(
+        {
+          set text(..main-text-styles)
+          [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]
+          content
+        },
+        styles
+      ).height,
+
+      // height of comment
+      measure(
+        {
+          set text(..comment-styles)
+          comment-content
+        },
+        styles
+      ).height,
+
+      // height of line numbers
+      measure(
+        {
+          set text(..line-number-styles)
+          [0123456789]
+        },
+        styles
+      ).height
     )
+
+    // converting input parameters to absolute lengths
+    let indent-size-abs = measure(
+      rect(width: indent-size),
+      styles
+    ).width
+
+    let block-inset-abs = measure(
+      rect(width: block-inset),
+      styles
+    ).width
+
+    let row-gutter-abs = measure(
+      rect(width: row-gutter),
+      styles
+    ).width
 
     let is-first-line = line-index == 0
     let is-last-line = line-index == num-lines - 1
@@ -191,14 +217,96 @@
     _indent-guides(
       indent-guides,
       indent-level,
-      indent-size,
-      content-height,
-      block-inset,
-      row-gutter,
+      indent-size-abs,
+      row-height,
+      block-inset-abs,
+      row-gutter-abs,
       is-first-line,
       is-last-line
     )
   }))
+}
+
+
+// Create indent guides for a given line of a code element.
+// Given the content of the line, calculates size of the content
+//   and creates indent guides of sufficient length.
+//
+// Parameters:
+//   indent-guides: Stroke for drawing indent guides.
+//   content: The main text that appears on the given line.
+//   line-index: The 0-based index of the given line.
+//   num-lines: The total number of lines in the current element.
+//   indent-level: The indent level at the given line.
+//   indent-size: The indent size used in the current element.
+//   block-inset: The inset of the current element.
+//   row-gutter: The row-gutter of the current element.
+//   line-number-styles: Dictionary of styling options for the line numbers.
+//     Supports any parameter in Typst's native text function.
+#let _code-indent-guides(
+  indent-guides,
+  content,
+  line-index,
+  num-lines,
+  indent-level,
+  indent-size,
+  block-inset,
+  row-gutter,
+  line-number-styles,
+) = {
+  style(styles => {
+    // heuristically determine the height of the containing table row
+    let row-height = calc.max(
+      // height of main content
+      measure(
+        {
+          [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]
+          content
+        },
+        styles
+      ).height,
+
+      // height of line numbers
+      measure(
+        {
+          set text(..line-number-styles)
+          [0123456789]
+        },
+        styles
+      ).height
+    )
+
+    // converting input parameters to absolute lengths
+    let indent-size-abs = measure(
+      rect(width: indent-size),
+      styles
+    ).width
+
+    let block-inset-abs = measure(
+      rect(width: block-inset),
+      styles
+    ).width
+
+    let row-gutter-abs = measure(
+      rect(width: row-gutter),
+      styles
+    ).width
+
+    let is-first-line = line-index == 0
+    let is-last-line = line-index == num-lines - 1
+
+    // display indent guides at the current line
+    _indent-guides(
+      indent-guides,
+      indent-level,
+      indent-size-abs,
+      row-height,
+      block-inset-abs,
+      row-gutter-abs,
+      is-first-line,
+      is-last-line
+    )
+  })
 }
 
 
@@ -267,7 +375,6 @@
 //   keywords: List of terms to receive strong emphasis if
 //     strong-keywords is true.
 //   comment-prefix: Content to prepend comments with.
-//   comment-color: Font color for comments.
 //   indent-size: Size of line indentations.
 //   indent-guides: Stroke for indent guides.
 //   row-gutter: Space between lines.
@@ -277,6 +384,12 @@
 //   stroke: Border stroke.
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
+//   main-text-styles: Dictionary of styling options for the algorithm steps.
+//     Supports any parameter in Typst's native text function.
+//   comment-styles: Dictionary of styling options for comment text.
+//     Supports any parameter in Typst's native text function.
+//   line-number-styles: Dictionary of styling options for the line numbers.
+//     Supports any parameter in Typst's native text function.
 #let algo(
   body,
   title: none,
@@ -285,7 +398,6 @@
   strong-keywords: true,
   keywords: _algo-default-keywords,
   comment-prefix: "// ",
-  comment-color: rgb(45%, 45%, 45%),
   indent-size: 20pt,
   indent-guides: none,
   row-gutter: 10pt,
@@ -294,6 +406,9 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%),
   breakable: false,
+  main-text-styles: (:),
+  comment-styles: ("fill": rgb(45%, 45%, 45%)),
+  line-number-styles: (:),
 ) = {
   counter(_algo-id-ckey).step()
   counter(_algo-line-ckey).update(0)
@@ -392,7 +507,7 @@
 
       counter(_algo-indent-ckey).display(indent-level => {
         if indent-guides != none {
-          _build-indent-guides(
+          _algo-indent-guides(
             indent-guides,
             line,
             i,
@@ -400,7 +515,10 @@
             indent-level,
             indent-size,
             inset,
-            row-gutter
+            row-gutter,
+            main-text-styles,
+            comment-styles,
+            line-number-styles
           )
         }
 
@@ -504,17 +622,24 @@
     for (i, line) in algo-steps.enumerate() {
       if line-numbers {
         let line-number = i + 1
-        table-data.push(str(line-number))
+
+        table-data.push({
+          set text(..line-number-styles)
+          str(line-number)
+        })
       }
 
-      table-data.push(line)
+      table-data.push({
+        set text(..main-text-styles)
+        line
+      })
 
       if has-comments {
         if comment-contents.at(i) == none {
           table-data.push([])
         } else {
           table-data.push({
-            set text(fill: comment-color)
+            set text(..comment-styles)
             comment-prefix
             comment-contents.at(i)
           })
@@ -568,6 +693,8 @@
 //   stroke: Border stroke.
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
+//   line-number-styles: Dictionary of styling options for the line numbers.
+//     Supports any parameter in Typst's native text function.
 #let code(
   body,
   line-numbers: true,
@@ -579,6 +706,7 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%),
   breakable: false,
+  line-number-styles: (:),
 ) = {
   let table-data = ()
   let raw-children = body.children.filter(e => e.func() == raw)
@@ -589,7 +717,10 @@
   for (i, lines) in lines-by-child.enumerate() {
     for line in lines {
       if line-numbers {
-        table-data.push(str(line-index + 1))
+        table-data.push({
+          set text(..line-number-styles)
+          str(line-index + 1)
+        })
       }
 
       let content = {
@@ -615,15 +746,16 @@
               )
             }
 
-            _build-indent-guides(
+            _code-indent-guides(
               indent-guides,
               raw-line,
               line-index,
-              lines.len(),
+              num-lines,
               indent-level,
               indent-size,
               inset,
-              row-gutter
+              row-gutter,
+              line-number-styles
             )
           })
         }

@@ -9,7 +9,7 @@ A Typst library for writing algorithms. On Typst v0.6.0+ you can import the `alg
 Otherwise, add the `algo.typ` file to your project and import it as normal:
 
 ```typst
-#import "algo.typ" : algo, i, d, comment, code
+#import "algo.typ": algo, i, d, comment, code
 ```
 
 Use the `algo` function for writing pseudocode and the `code` function for writing code blocks with line numbers. Check out the examples below to see how they work. `algo.typ` also has comments explaining the options each function has.
@@ -23,8 +23,8 @@ Here's a basic use of `algo`:
   title: "Fib",
   parameters: ("n",)
 )[
-  if $n < 0$:#i\            // use #i to indent the following lines
-    return null#d\          // use #d to to dedent the following lines
+  if $n < 0$:#i\        // use #i to indent the following lines
+    return null#d\      // use #d to to dedent the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
   return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
@@ -72,7 +72,7 @@ And here's `algo` with more styling options:
   ],
   parameters: ([#math.italic("n")],),
   comment-prefix: [#sym.triangle.stroked.r ],
-  comment-color: rgb(100%, 0%, 0%),
+  comment-styles: (fill: rgb(100%, 0%, 0%)),
   indent-size: 15pt,
   indent-guides: 1pt + gray,
   row-gutter: 5pt,

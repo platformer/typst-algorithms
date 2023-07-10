@@ -1,14 +1,14 @@
 // check out algo.typ to see all the options
 // for algo and code
-#import "algo.typ" : *
+#import "algo.typ": algo, i, d, comment, code
 
 
 #algo(
   title: "Fib",
   parameters: ("n",)
 )[
-  if $n < 0$:#i\            // use #i to indent the following lines
-    return null#d\          // use #d to to dedent the following lines
+  if $n < 0$:#i\        // use #i to indent the following lines
+    return null#d\      // use #d to to dedent the following lines
   if $n = 0$ or $n = 1$:#i #comment[you can also]\
     return $n$#d #comment[add comments!]\
   return #smallcaps("Fib")$(n-1) +$ #smallcaps("Fib")$(n-2)$
@@ -48,7 +48,7 @@
   ],
   parameters: ([#math.italic("n")],),
   comment-prefix: [#sym.triangle.stroked.r ],
-  comment-color: rgb(100%, 0%, 0%),
+  comment-styles: (fill: rgb(100%, 0%, 0%)),
   indent-size: 15pt,
   indent-guides: 1pt + gray,
   row-gutter: 5pt,
