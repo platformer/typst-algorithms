@@ -12,7 +12,7 @@ Otherwise, add the `algo.typ` file to your project and import it as normal:
 #import "algo.typ": algo, i, d, comment, code
 ```
 
-Use the `algo` function for writing pseudocode and the `code` function for writing code blocks with line numbers. Check out the examples below to see how they work. `algo.typ` also has comments explaining the options each function has.
+Use the `algo` function for writing pseudocode and the `code` function for writing code blocks with line numbers. Check out the [examples](#examples) below for a quick overview. See the [usage](#usage) section to read about all the options each function has.
 
 ## Examples
 
@@ -145,6 +145,63 @@ And here's `code` with some styling options:
 ````
 
 <img src="https://github.com/platformer/typst-algorithms/assets/40146328/c091ac43-6861-40bc-8046-03ea285712c3" width="400px"/>
+
+## Usage
+
+### algo
+
+Makes a pseudocode element.
+
+Parameters:
+
+*   `body`: `content` &mdash; Main algorithm content.
+*   `title`: `string` or `content` &mdash; Algorithm title.
+*   `Parameters`: `array` &mdash; List of algorithm parameters. Elements can be `string` or `content` values. `string` values will automatically be displayed in math mode.
+*   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
+*   `strong-keywords`: `boolean` &mdash; Whether to strongly emphasize keywords.
+*   `keywords`: `array` &mdash; List of terms to receive strong emphasis. Elements must be `string` values. Ignored if `strong-keywords` is `false`.
+*   `comment-prefix`: `content` &mdash; What to prepend comments with.
+*   `indent-size`: `length` &mdash; Size of line indentations.
+*   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
+*   `row-gutter`: `length` &mdash; Space between lines.
+*   `column-gutter`: `length` &mdash; Space between line numbers, text, and comments.
+*   `inset`: `length` &mdash; Size of inner padding.
+*   `fill`: `color` &mdash; Fill color.
+*   `stroke`: `stroke` &mdash; Stroke for the element's border.
+*   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
+*   `main-text-styles`: `dictionary` &mdash; Styling options for the main algorithm text. Supports all parameters in Typst's native `text` function.
+*   `comment-styles`: `dictionary` &mdash; Styling options for comment text. Supports all parameters in Typst's native `text` function.
+*   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
+
+### i and d
+
+`#i` indents all following lines and `#d` dedents all following lines.
+
+### comment
+
+Adds a comment to the line in which it's placed.
+
+Parameters:
+
+*   `body`: `content` &mdash; Comment content.
+
+### code
+
+Makes a code block element.
+
+Parameters:
+
+*   `body`: `content` &mdash; Main content. Expects `raw` text.
+*   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
+*   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
+*   `tab-size`: `none` or `integer` &mdash; Amount of spaces that should be considered an indent. Set to `none` if you are using real tab characters. Ignored if `indent-guides` is `false`.
+*   `row-gutter`: `length` &mdash; Space between lines.
+*   `column-gutter`: `length` &mdash; Space between line numbers and text.
+*   `inset`: `length` &mdash; Size of inner padding.
+*   `fill`: `color` &mdash; Fill color.
+*   `stroke`: `stroke` &mdash; Stroke for the element's border.
+*   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
+*   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
 
 ## Contributing
 
