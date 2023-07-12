@@ -708,68 +708,73 @@
   breakable: false,
   line-number-styles: (:),
 ) = {
-  let table-data = ()
   let raw-children = body.children.filter(e => e.func() == raw)
-  let lines-by-child = raw-children.map(e => e.text.split("\n"))
-  let num-lines = lines-by-child.map(e => e.len()).sum()
-  let line-index = 0
 
-  for (i, lines) in lines-by-child.enumerate() {
-    for line in lines {
-      if line-numbers {
-        table-data.push({
-          set text(..line-number-styles)
-          str(line-index + 1)
+  assert(raw-children.len() > 0, message: "must provide raw text to code")
+  assert(
+    raw-children.len() == 1,
+    message: "cannot pass multiple raw text blocks to code"
+  )
+
+  let raw-text = raw-children.first()
+  let lines = raw-children.first().text.split("\n")
+  let lang = if raw-text.has("lang") {
+    raw-text.lang
+  } else {
+    none
+  }
+
+  let table-data = ()
+
+  for (i, line) in lines.enumerate() {
+    if line-numbers {
+      table-data.push({
+        set text(..line-number-styles)
+        str(i + 1)
+      })
+    }
+
+    let content = {
+      let raw-line = raw(line, lang: lang)
+
+      if indent-guides != none {
+        style(styles => {
+          let (indent-level, indent-size) = if tab-size == none {
+            let whitespace = line.match(regex("^(\t*).*$"))
+                                  .at("captures")
+                                  .at(0)
+            (
+              whitespace.len(),
+              measure(raw("\t"), styles).width
+            )
+          } else {
+            let whitespace = line.match(regex("^( *).*$"))
+                                  .at("captures")
+                                  .at(0)
+            (
+              calc.floor(whitespace.len() / tab-size),
+              measure(raw("a" * tab-size), styles).width
+            )
+          }
+
+          _code-indent-guides(
+            indent-guides,
+            raw-line,
+            i,
+            lines.len(),
+            indent-level,
+            indent-size,
+            inset,
+            row-gutter,
+            line-number-styles
+          )
         })
       }
 
-      let content = {
-        let raw-line = if raw-children.at(i).has("lang") {
-          raw(line, lang: raw-children.at(i).lang)
-        } else {
-          raw(line)
-        }
-
-        if indent-guides != none {
-          style(styles => {
-            let (indent-level, indent-size) = if tab-size == none {
-              let whitespace = line.match(regex("^(\t*).*$"))
-                                   .at("captures")
-                                   .at(0)
-              (
-                whitespace.len(),
-                measure(raw("\t"), styles).width
-              )
-            } else {
-              let whitespace = line.match(regex("^( *).*$"))
-                                   .at("captures")
-                                   .at(0)
-              (
-                calc.floor(whitespace.len() / tab-size),
-                measure(raw("a" * tab-size), styles).width
-              )
-            }
-
-            _code-indent-guides(
-              indent-guides,
-              raw-line,
-              line-index,
-              num-lines,
-              indent-level,
-              indent-size,
-              inset,
-              row-gutter,
-              line-number-styles
-            )
-          })
-        }
-
-        raw-line
-      }
-
-      table-data.push(content)
-      line-index += 1
+      raw-line
     }
+
+    table-data.push(content)
   }
 
   // display content
