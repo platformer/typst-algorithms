@@ -124,8 +124,6 @@ And here's `code` with some styling options:
 
 ````typst
 #code(
-  tab-size: 4,  // sets how many spaces to interpret as one indent
-                // use none if you are using real tab characters
   indent-guides: 1pt + gray,
   row-gutter: 5pt,
   column-gutter: 5pt,
@@ -194,7 +192,7 @@ Parameters:
 *   `body`: `content` &mdash; Main content. Expects `raw` text.
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
 *   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
-*   `tab-size`: `none` or `integer` &mdash; Amount of spaces that should be considered an indent. Set to `none` if you are using real tab characters. Ignored if `indent-guides` is `false`.
+*   `tab-size`: `integer` &mdash; Amount of spaces that should be considered an indent. If unspecified, the tab size is determined automatically from the first instance of starting whitespace.
 *   `row-gutter`: `length` &mdash; Space between lines.
 *   `column-gutter`: `length` &mdash; Space between line numbers and text.
 *   `inset`: `length` &mdash; Size of inner padding.

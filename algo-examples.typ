@@ -92,8 +92,6 @@
 
 
 #code(
-  tab-size: 4,  // sets how many spaces to interpret as one indent
-                // use none if you are using real tab characters
   indent-guides: 1pt + gray,
   row-gutter: 5pt,
   column-gutter: 5pt,

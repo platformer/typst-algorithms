@@ -310,6 +310,28 @@
 }
 
 
+// Determines tab size being used by the given text.
+// Searches for the first line that starts with whitespace and
+//   returns the number of spaces the line starts with. If no
+//   such line is found, -1 is returned.
+//
+// Parameters:
+//   lines: Array of strings, where each string is a line from the
+//     provided raw text.
+#let _get-tab-size(lines) = {
+  for line in lines {
+    let starting-whitespace = line.replace(regex("\t"), "")
+                                  .find(regex("^ +"))
+
+    if starting-whitespace != none {
+      return starting-whitespace.len()
+    }
+  }
+
+  return -1
+}
+
+
 // Asserts that the current context is an algo element.
 // Returns the provided message if the assertion fails.
 #let _assert-in-algo(message) = {
@@ -685,7 +707,7 @@
 //   line-numbers: Whether to have line numbers.
 //   indent-guides: Stroke for indent guides.
 //   tab-size: Amount of spaces that should be considered an indent.
-//     Set to none if you intend to use tab characters.
+//     Determined automatically if unspecified.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding.
@@ -699,7 +721,7 @@
   body,
   line-numbers: true,
   indent-guides: none,
-  tab-size: 2,
+  tab-size: auto,
   row-gutter: 10pt,
   column-gutter: 10pt,
   inset: 10pt,
@@ -718,6 +740,16 @@
 
   let raw-text = raw-children.first()
   let lines = raw-children.first().text.split("\n")
+
+  if tab-size == auto {
+    tab-size = _get-tab-size(lines)
+  }
+
+  // no indents exist, so ignore indent-guides
+  if tab-size == -1 {
+    indent-guides = none
+  }
+
   let lang = if raw-text.has("lang") {
     raw-text.lang
   } else {
@@ -738,24 +770,17 @@
       let raw-line = raw(line, lang: lang)
 
       if indent-guides != none {
+        let starting-whitespace = line.replace(regex("\t"), "")
+                                      .find(regex("^ +"))
+
+        let indent-level = if starting-whitespace == none {
+          0
+        } else {
+          calc.floor(starting-whitespace.len() / tab-size)
+        }
+
         style(styles => {
-          let (indent-level, indent-size) = if tab-size == none {
-            let whitespace = line.match(regex("^(\t*).*$"))
-                                  .at("captures")
-                                  .at(0)
-            (
-              whitespace.len(),
-              measure(raw("\t"), styles).width
-            )
-          } else {
-            let whitespace = line.match(regex("^( *).*$"))
-                                  .at("captures")
-                                  .at(0)
-            (
-              calc.floor(whitespace.len() / tab-size),
-              measure(raw("a" * tab-size), styles).width
-            )
-          }
+          let indent-size = measure(raw("a" * tab-size), styles).width
 
           _code-indent-guides(
             indent-guides,
