@@ -19,20 +19,33 @@
 
 // list of default keywords that will be highlighted by strong-keywords
 #let _algo-default-keywords = (
+  // branch delimiters
   "if",
   "else",
   "then",
+
+  // loop delimiters
   "while",
   "for",
+  "repeat",
   "do",
+  "until",
+
+  // general delimiters
   ":",
   "end",
+
+  // conditional expressions
   "and",
   "or",
   "not",
   "in",
+
+  // loop conditions
   "to",
   "down",
+
+  // misc
   "let",
   "return",
   "goto",
