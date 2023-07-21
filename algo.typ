@@ -49,7 +49,14 @@
   "let",
   "return",
   "goto",
-)
+).map(kw => {
+  // add uppercase words to list
+  if kw.starts-with(regex("\w")) {
+    (kw, str.from-unicode(str.to-unicode(kw.first()) - 32) + kw.slice(1))
+  } else {
+    (kw,)
+  }
+}).fold((), (acc, e) => acc + e)
 
 
 // Get the thickness of a stroke.
