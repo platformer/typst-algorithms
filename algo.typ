@@ -88,6 +88,7 @@
 //
 // Parameters:
 //   stroke: Stroke for drawing indent guides.
+//   offset: Horizontal offset of indent guides.
 //   indent-level: The indent level on the given line.
 //   indent-size: The absolute length of a single indent.
 //   row-height: The absolute height of the containing row of the given line.
@@ -102,6 +103,7 @@
 //     If so, the length of the indent guide will depend on block-inset.
 #let _indent-guides(
   stroke,
+  offset,
   indent-level,
   indent-size,
   row-height,
@@ -132,7 +134,7 @@
   // draw the indent guide for each indent level on the given line
   for j in range(indent-level) {
     place(
-      dx: indent-size * j + stroke-width / 2 + 0.5pt,
+      dx: indent-size * j + stroke-width / 2 + 0.5pt + offset,
       dy: -backset,
       line(
         length: stroke-length,
@@ -150,6 +152,7 @@
 //
 // Parameters:
 //   indent-guides: Stroke for drawing indent guides.
+//   indent-guides-offset: Horizontal offset of indent guides.
 //   content: The main text that appears on the given line.
 //   line-index: The 0-based index of the given line.
 //   num-lines: The total number of lines in the current element.
@@ -165,6 +168,7 @@
 //     Supports any parameter in Typst's native text function.
 #let _algo-indent-guides(
   indent-guides,
+  indent-guides-offset,
   content,
   line-index,
   num-lines,
@@ -236,6 +240,7 @@
     // display indent guides at the current line
     _indent-guides(
       indent-guides,
+      indent-guides-offset,
       indent-level,
       indent-size-abs,
       row-height,
@@ -254,6 +259,7 @@
 //
 // Parameters:
 //   indent-guides: Stroke for drawing indent guides.
+//   indent-guides-offset: Horizontal offset of indent guides.
 //   content: The main text that appears on the given line.
 //   line-index: The 0-based index of the given line.
 //   num-lines: The total number of lines in the current element.
@@ -265,6 +271,7 @@
 //     Supports any parameter in Typst's native text function.
 #let _code-indent-guides(
   indent-guides,
+  indent-guides-offset,
   content,
   line-index,
   num-lines,
@@ -318,6 +325,7 @@
     // display indent guides at the current line
     _indent-guides(
       indent-guides,
+      indent-guides-offset,
       indent-level,
       indent-size-abs,
       row-height,
@@ -419,6 +427,7 @@
 //   comment-prefix: Content to prepend comments with.
 //   indent-size: Size of line indentations.
 //   indent-guides: Stroke for indent guides.
+//   indent-guides-offset: Horizontal offset of indent guides.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding.
@@ -442,6 +451,7 @@
   comment-prefix: "// ",
   indent-size: 20pt,
   indent-guides: none,
+  indent-guides-offset: 0pt,
   row-gutter: 10pt,
   column-gutter: 10pt,
   inset: 10pt,
@@ -551,6 +561,7 @@
         if indent-guides != none {
           _algo-indent-guides(
             indent-guides,
+            indent-guides-offset,
             line,
             i,
             lines.len(),
@@ -726,6 +737,7 @@
 //   body: Raw text.
 //   line-numbers: Whether to have line numbers.
 //   indent-guides: Stroke for indent guides.
+//   indent-guides-offset: Horizontal offset of indent guides.
 //   tab-size: Amount of spaces that should be considered an indent.
 //     Determined automatically if unspecified.
 //   row-gutter: Space between lines.
@@ -741,6 +753,7 @@
   body,
   line-numbers: true,
   indent-guides: none,
+  indent-guides-offset: 0pt,
   tab-size: auto,
   row-gutter: 10pt,
   column-gutter: 10pt,
@@ -804,6 +817,7 @@
 
           _code-indent-guides(
             indent-guides,
+            indent-guides-offset,
             raw-line,
             i,
             lines.len(),

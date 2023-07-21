@@ -161,6 +161,7 @@ Parameters:
 *   `comment-prefix`: `content` &mdash; What to prepend comments with.
 *   `indent-size`: `length` &mdash; Size of line indentations.
 *   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
+*   `indent-guides-offset`: `length` &mdash; Horizontal offset of indent guides.
 *   `row-gutter`: `length` &mdash; Space between lines.
 *   `column-gutter`: `length` &mdash; Space between line numbers, text, and comments.
 *   `inset`: `length` &mdash; Size of inner padding.
@@ -192,6 +193,7 @@ Parameters:
 *   `body`: `content` &mdash; Main content. Expects `raw` text.
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
 *   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
+*   `indent-guides-offset`: `length` &mdash; Horizontal offset of indent guides.
 *   `tab-size`: `integer` &mdash; Amount of spaces that should be considered an indent. If unspecified, the tab size is determined automatically from the first instance of starting whitespace.
 *   `row-gutter`: `length` &mdash; Space between lines.
 *   `column-gutter`: `length` &mdash; Space between line numbers and text.
