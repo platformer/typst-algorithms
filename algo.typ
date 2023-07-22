@@ -435,6 +435,7 @@
 //   stroke: Border stroke.
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
+//   block-align: Alignment of block. Use none for no alignment.
 //   main-text-styles: Dictionary of styling options for the algorithm steps.
 //     Supports any parameter in Typst's native text function.
 //   comment-styles: Dictionary of styling options for comment text.
@@ -458,6 +459,7 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%),
   breakable: false,
+  block-align: center,
   main-text-styles: (:),
   comment-styles: ("fill": rgb(45%, 45%, 45%)),
   line-number-styles: (:),
@@ -654,7 +656,7 @@
 
     let num-columns = 1 + int(line-numbers) + int(has-comments)
 
-    let align = {
+    let table-align = {
       let alignments = ()
 
       if line-numbers {
@@ -704,16 +706,15 @@
       columns: num-columns,
       column-gutter: column-gutter,
       row-gutter: row-gutter,
-      align: align,
+      align: table-align,
       stroke: none,
       inset: 0pt,
       ..table-data
     )
   })
 
-  // display content
-  set par(justify: false)
-  align(center, block(
+  // build block
+  let algo-block = block(
     width: auto,
     height: auto,
     fill: fill,
@@ -725,7 +726,16 @@
     #algo-header
     #v(weak: true, row-gutter)
     #align(left, algo-table)
-  ])
+  ]
+
+  // display content
+  set par(justify: false)
+
+  if block-align != none {
+    align(block-align, algo-block)
+  } else {
+    algo-block
+  }
 
   _algo-in-algo-context.update(false)
 }
@@ -747,6 +757,7 @@
 //   stroke: Border stroke.
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
+//   block-align: Alignment of block. Use none for no alignment.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 //     Supports any parameter in Typst's native text function.
 #let code(
@@ -761,6 +772,7 @@
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%),
   breakable: false,
+  block-align: center,
   line-number-styles: (:),
 ) = {
   let raw-children = body.children.filter(e => e.func() == raw)
@@ -836,13 +848,12 @@
     table-data.push(content)
   }
 
-  // display content
-  set par(justify: false)
-  align(center, block(
+  // build block
+  let code-block = block(
+    width: auto,
+    fill: fill,
     stroke: stroke,
     inset: inset,
-    fill: fill,
-    width: auto,
     breakable: breakable
   )[
     #table(
@@ -859,5 +870,14 @@
       },
       ..table-data
     )
-  ])
+  ]
+
+  // display content
+  set par(justify: false)
+
+  if block-align != none {
+    align(block-align, code-block)
+  } else {
+    code-block
+  }
 }
