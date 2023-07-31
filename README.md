@@ -203,6 +203,7 @@ Parameters:
 *   `stroke`: `stroke` &mdash; Stroke for the element's border.
 *   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `code` on the page. Using `none` will cause the internal `block` element to be returned as-is.
+*   `main-text-styles`: `dictionary` &mdash; Styling options for the main raw text. Supports all parameters in Typst's native `text` function.
 *   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
 
 ## Contributing

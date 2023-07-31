@@ -58,6 +58,181 @@
   }
 }).fold((), (acc, e) => acc + e)
 
+// constants for measuring text height
+#let _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#let _numerals = "0123456789"
+#let _special-characters = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+#let _alphanumerics = _alphabet + _numerals
+#let _ascii = _alphanumerics + _special-characters
+
+
+// Returns list of content values, where each element is
+//   a line from the algo body
+//
+// Parameters:
+//   body: Algorithm content.
+#let _get-algo-lines(body) = {
+  // concatenate consecutive non-whitespace elements
+  // i.e. just combine everything that definitely aren't on separate lines
+  let text-and-whitespaces = {
+    let joined-children = ()
+    let temp = []
+
+    for child in body.children {
+      if (
+        child == [ ]
+        or child == linebreak()
+        or child == parbreak()
+      ){
+        if temp != [] {
+          joined-children.push(temp)
+          temp = []
+        }
+
+        joined-children.push(child)
+      } else {
+        temp += child
+      }
+    }
+
+    if temp != [] {
+      joined-children.push(temp)
+    }
+
+    joined-children
+  }
+
+  // filter out non-meaningful whitespace elements
+  let text-and-breaks = text-and-whitespaces.filter(
+    elem => elem != [ ] and elem != parbreak()
+  )
+
+  // handling meaningful whitespace
+  // make final list of empty and non-empty lines
+  let lines = {
+    let joined-lines = ()
+    let line-parts = []
+    let num-linebreaks = 0
+
+    for line in text-and-breaks {
+      if line == linebreak() {
+        if line-parts != [] {
+          joined-lines.push(line-parts)
+          line-parts = []
+        }
+
+        num-linebreaks += 1
+
+        if num-linebreaks > 1 {
+          joined-lines.push([])
+        }
+      } else {
+        line-parts += [#line ]
+        num-linebreaks = 0
+      }
+    }
+
+    if line-parts != [] {
+      joined-lines.push(line-parts)
+    }
+
+    joined-lines
+  }
+
+  return lines
+}
+
+
+// Returns list of content values, where each element is a
+//   boxed clip of a line from the provided raw text
+//
+// Parameters:
+//   raw-text: Raw text block.
+//   main-text-styles: Dictionary of styling options for the source code.
+//     Supports any parameter in Typst's native text function.
+#let _get-code-lines(
+  raw-text,
+  main-text-styles,
+) = {
+  let line-spacing = 50pt
+
+  let styled-raw-text = {
+    set text(..main-text-styles)
+    set par(leading: line-spacing)
+    raw-text
+  }
+
+  let num-lines = raw-text.text.split("\n").len()
+
+  let lines = for i in range(num-lines) {
+    (style(styles => {
+      let text-height = measure(
+        {
+          set text(..main-text-styles)
+          raw(_ascii)
+        },
+        styles
+      ).height
+
+      set align(start + top)
+      box(
+        height: text-height,
+        clip: true,
+        move(
+          dy: -((text-height + line-spacing) * i),
+          styled-raw-text
+        )
+      )
+    }), )
+  }
+
+  return lines
+}
+
+
+// Determines tab size being used by the given text.
+// Searches for the first line that starts with whitespace and
+//   returns the number of spaces the line starts with. If no
+//   such line is found, -1 is returned.
+//
+// Parameters:
+//   line-strs: Array of strings, where each string is a line from the
+//     provided raw text.
+#let _get-code-tab-size(line-strs) = {
+  for line in line-strs {
+    let starting-whitespace = line.replace(regex("\t"), "")
+                                  .find(regex("^ +"))
+
+    if starting-whitespace != none {
+      return starting-whitespace.len()
+    }
+  }
+
+  return -1
+}
+
+
+// Determines the indent level at each line of the given text.
+// Returns a list of integers, where the ith integer is the indent
+//   level of the ith line.
+//
+// Parameters:
+//   line-strs: Array of strings, where each string is a line from the
+//     provided raw text.
+//   tab-size: tab-size used by the given code
+#let _get-code-indent-levels(line-strs, tab-size) = {
+  line-strs.map(line => {
+    let starting-whitespace = line.replace(regex("\t"), "")
+                                  .find(regex("^ +"))
+
+    if starting-whitespace == none {
+      0
+    } else {
+      calc.floor(starting-whitespace.len() / tab-size)
+    }
+  })
+}
+
 
 // Get the thickness of a stroke.
 // Credit to PgBiel on GitHub.
@@ -133,13 +308,20 @@
 
   // draw the indent guide for each indent level on the given line
   for j in range(indent-level) {
-    place(
-      dx: indent-size * j + stroke-width / 2 + 0.5pt + offset,
-      dy: -backset,
-      line(
-        length: stroke-length,
-        angle: 90deg,
-        stroke: stroke
+    box(
+      height: row-height,
+      width: 0pt,
+      align(
+        start + top,
+        place(
+          dx: indent-size * j + stroke-width / 2 + 0.5pt + offset,
+          dy: -backset,
+          line(
+            length: stroke-length,
+            angle: 90deg,
+            stroke: stroke
+          )
+        )
       )
     )
   }
@@ -179,78 +361,76 @@
   main-text-styles,
   comment-styles,
   line-number-styles,
-) = {
-  locate(loc => style(styles => {
-    let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-    let line-index-str = str(line-index)
-    let comment-lists = _algo-comment-lists.final(loc)
-    let comment-content = comment-lists.at(id-str, default: (:))
-                                       .at(line-index-str, default: [])
+) = { locate(loc => style(styles => {
+  let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+  let line-index-str = str(line-index)
+  let comment-lists = _algo-comment-lists.final(loc)
+  let comment-content = comment-lists.at(id-str, default: (:))
+                                      .at(line-index-str, default: [])
 
-    // heuristically determine the height of the containing table row
-    let row-height = calc.max(
-      // height of main content
-      measure(
-        {
-          set text(..main-text-styles)
-          [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]
-          content
-        },
-        styles
-      ).height,
-
-      // height of comment
-      measure(
-        {
-          set text(..comment-styles)
-          comment-content
-        },
-        styles
-      ).height,
-
-      // height of line numbers
-      measure(
-        {
-          set text(..line-number-styles)
-          [0123456789]
-        },
-        styles
-      ).height
-    )
-
-    // converting input parameters to absolute lengths
-    let indent-size-abs = measure(
-      rect(width: indent-size),
+  // heuristically determine the height of the containing table row
+  let row-height = calc.max(
+    // height of main content
+    measure(
+      {
+        set text(..main-text-styles)
+        _alphanumerics
+        content
+      },
       styles
-    ).width
+    ).height,
 
-    let block-inset-abs = measure(
-      rect(width: block-inset),
+    // height of comment
+    measure(
+      {
+        set text(..comment-styles)
+        comment-content
+      },
       styles
-    ).width
+    ).height,
 
-    let row-gutter-abs = measure(
-      rect(width: row-gutter),
+    // height of line numbers
+    measure(
+      {
+        set text(..line-number-styles)
+        _numerals
+      },
       styles
-    ).width
+    ).height
+  )
 
-    let is-first-line = line-index == 0
-    let is-last-line = line-index == num-lines - 1
+  // converting input parameters to absolute lengths
+  let indent-size-abs = measure(
+    rect(width: indent-size),
+    styles
+  ).width
 
-    // display indent guides at the current line
-    _indent-guides(
-      indent-guides,
-      indent-guides-offset,
-      indent-level,
-      indent-size-abs,
-      row-height,
-      block-inset-abs,
-      row-gutter-abs,
-      is-first-line,
-      is-last-line
-    )
-  }))
-}
+  let block-inset-abs = measure(
+    rect(width: block-inset),
+    styles
+  ).width
+
+  let row-gutter-abs = measure(
+    rect(width: row-gutter),
+    styles
+  ).width
+
+  let is-first-line = line-index == 0
+  let is-last-line = line-index == num-lines - 1
+
+  // display indent guides at the current line
+  _indent-guides(
+    indent-guides,
+    indent-guides-offset,
+    indent-level,
+    indent-size-abs,
+    row-height,
+    block-inset-abs,
+    row-gutter-abs,
+    is-first-line,
+    is-last-line
+  )
+}))}
 
 
 // Create indent guides for a given line of a code element.
@@ -260,104 +440,84 @@
 // Parameters:
 //   indent-guides: Stroke for drawing indent guides.
 //   indent-guides-offset: Horizontal offset of indent guides.
-//   content: The main text that appears on the given line.
 //   line-index: The 0-based index of the given line.
 //   num-lines: The total number of lines in the current element.
 //   indent-level: The indent level at the given line.
-//   indent-size: The indent size used in the current element.
+//   tab-size: Amount of spaces that should be considered an indent.
 //   block-inset: The inset of the current element.
 //   row-gutter: The row-gutter of the current element.
+//   main-text-styles: Dictionary of styling options for the source code.
+//     Supports any parameter in Typst's native text function.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 //     Supports any parameter in Typst's native text function.
 #let _code-indent-guides(
   indent-guides,
   indent-guides-offset,
-  content,
   line-index,
   num-lines,
   indent-level,
-  indent-size,
+  tab-size,
   block-inset,
   row-gutter,
+  main-text-styles,
   line-number-styles,
-) = {
-  style(styles => {
-    // heuristically determine the height of the containing table row
-    let row-height = calc.max(
-      // height of main content
-      measure(
-        {
-          [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]
-          content
-        },
-        styles
-      ).height,
-
-      // height of line numbers
-      measure(
-        {
-          set text(..line-number-styles)
-          [0123456789]
-        },
-        styles
-      ).height
-    )
-
-    // converting input parameters to absolute lengths
-    let indent-size-abs = measure(
-      rect(width: indent-size),
+) = { style(styles => {
+  // heuristically determine the height of the line
+  let row-height = calc.max(
+    //height of raw text
+    measure(
+      {
+        set text(..main-text-styles)
+        raw(_ascii)
+      },
       styles
-    ).width
+    ).height,
 
-    let block-inset-abs = measure(
-      rect(width: block-inset),
+    // height of line numbers
+    measure(
+      {
+        set text(..line-number-styles)
+        _numerals
+      },
       styles
-    ).width
+    ).height
+  )
 
-    let row-gutter-abs = measure(
-      rect(width: row-gutter),
-      styles
-    ).width
+  let indent-size = measure(
+    {
+      set text(..main-text-styles)
+      raw("a" * tab-size)
+    },
+    styles
+  ).width
 
-    let is-first-line = line-index == 0
-    let is-last-line = line-index == num-lines - 1
+  // converting input parameters to absolute lengths
+  let block-inset-abs = measure(
+    rect(width: block-inset),
+    styles
+  ).width
 
-    // display indent guides at the current line
-    _indent-guides(
-      indent-guides,
-      indent-guides-offset,
-      indent-level,
-      indent-size-abs,
-      row-height,
-      block-inset-abs,
-      row-gutter-abs,
-      is-first-line,
-      is-last-line
-    )
-  })
-}
+  let row-gutter-abs = measure(
+    rect(width: row-gutter),
+    styles
+  ).width
 
+  let is-first-line = line-index == 0
+  let is-last-line = line-index == num-lines - 1
 
-// Determines tab size being used by the given text.
-// Searches for the first line that starts with whitespace and
-//   returns the number of spaces the line starts with. If no
-//   such line is found, -1 is returned.
-//
-// Parameters:
-//   lines: Array of strings, where each string is a line from the
-//     provided raw text.
-#let _get-tab-size(lines) = {
-  for line in lines {
-    let starting-whitespace = line.replace(regex("\t"), "")
-                                  .find(regex("^ +"))
-
-    if starting-whitespace != none {
-      return starting-whitespace.len()
-    }
-  }
-
-  return -1
-}
+  // display indent guides at the current line
+  _indent-guides(
+    indent-guides,
+    indent-guides-offset,
+    indent-level,
+    indent-size,
+    row-height,
+    block-inset-abs,
+    row-gutter-abs,
+    is-first-line,
+    is-last-line
+  )
+})}
 
 
 // Asserts that the current context is an algo element.
@@ -478,72 +638,7 @@
     }
   })
 
-  // concatenate consecutive non-whitespace elements
-  // i.e. just combine everything that definitely aren't on separate lines
-  let text-and-whitespaces = {
-    let joined-children = ()
-    let temp = []
-
-    for child in body.children {
-      if (
-        child == [ ]
-        or child == linebreak()
-        or child == parbreak()
-      ){
-        if temp != [] {
-          joined-children.push(temp)
-          temp = []
-        }
-
-        joined-children.push(child)
-      } else {
-        temp += child
-      }
-    }
-
-    if temp != [] {
-      joined-children.push(temp)
-    }
-
-    joined-children
-  }
-
-  // filter out non-meaningful whitespace elements
-  let text-and-breaks = text-and-whitespaces.filter(
-    elem => elem != [ ] and elem != parbreak()
-  )
-
-  // handling meaningful whitespace
-  // make final list of empty and non-empty lines
-  let lines = {
-    let joined-lines = ()
-    let line-parts = []
-    let num-linebreaks = 0
-
-    for line in text-and-breaks {
-      if line == linebreak() {
-        if line-parts != [] {
-          joined-lines.push(line-parts)
-          line-parts = []
-        }
-
-        num-linebreaks += 1
-
-        if num-linebreaks > 1 {
-          joined-lines.push([])
-        }
-      } else {
-        line-parts += [#line ]
-        num-linebreaks = 0
-      }
-    }
-
-    if line-parts != [] {
-      joined-lines.push(line-parts)
-    }
-
-    joined-lines
-  }
+  let lines = _get-algo-lines(body)
 
   // build text, comment lists, and indent-guides
   let algo-steps = ()
@@ -577,10 +672,10 @@
           )
         }
 
-        pad(
+        box(pad(
           left: indent-size * indent-level,
           line
-        )
+        ))
       })
 
       counter(_algo-line-ckey).step()
@@ -663,10 +758,10 @@
         alignments.push(right + horizon)
       }
 
-      alignments.push(left)
+      alignments.push(left + bottom)
 
       if has-comments {
-        alignments.push(left + horizon)
+        alignments.push(left + bottom)
       }
 
       (x, _) => alignments.at(x)
@@ -723,6 +818,7 @@
     outset: 0pt,
     breakable: breakable
   )[
+    #set align(start + top)
     #algo-header
     #v(weak: true, row-gutter)
     #align(left, algo-table)
@@ -758,6 +854,8 @@
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
 //   block-align: Alignment of block. Use none for no alignment.
+//   main-text-styles: Dictionary of styling options for the source code.
+//     Supports any parameter in Typst's native text function.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 //     Supports any parameter in Typst's native text function.
 #let code(
@@ -773,6 +871,7 @@
   stroke: 1pt + rgb(50%, 50%, 50%),
   breakable: false,
   block-align: center,
+  main-text-styles: (:),
   line-number-styles: (:),
 ) = {
   let raw-children = body.children.filter(e => e.func() == raw)
@@ -784,21 +883,23 @@
   )
 
   let raw-text = raw-children.first()
-  let lines = raw-children.first().text.split("\n")
+  let line-strs = raw-text.text.split("\n")
+
+  let lines = _get-code-lines(
+    raw-text,
+    main-text-styles
+  )
 
   if tab-size == auto {
-    tab-size = _get-tab-size(lines)
+    tab-size = _get-code-tab-size(line-strs)
   }
 
   // no indents exist, so ignore indent-guides
-  if tab-size == -1 {
+  let indent-levels = if tab-size == -1 {
     indent-guides = none
-  }
-
-  let lang = if raw-text.has("lang") {
-    raw-text.lang
-  } else {
     none
+  } else {
+    _get-code-indent-levels(line-strs, tab-size)
   }
 
   let table-data = ()
@@ -812,37 +913,22 @@
     }
 
     let content = {
-      let raw-line = raw(line, lang: lang)
-
       if indent-guides != none {
-        let starting-whitespace = line.replace(regex("\t"), "")
-                                      .find(regex("^ +"))
-
-        let indent-level = if starting-whitespace == none {
-          0
-        } else {
-          calc.floor(starting-whitespace.len() / tab-size)
-        }
-
-        style(styles => {
-          let indent-size = measure(raw("a" * tab-size), styles).width
-
-          _code-indent-guides(
-            indent-guides,
-            indent-guides-offset,
-            raw-line,
-            i,
-            lines.len(),
-            indent-level,
-            indent-size,
-            inset,
-            row-gutter,
-            line-number-styles
-          )
-        })
+        _code-indent-guides(
+          indent-guides,
+          indent-guides-offset,
+          i,
+          lines.len(),
+          indent-levels.at(i),
+          tab-size,
+          inset,
+          row-gutter,
+          main-text-styles,
+          line-number-styles
+        )
       }
 
-      raw-line
+      box(line)
     }
 
     table-data.push(content)
@@ -856,6 +942,7 @@
     inset: inset,
     breakable: breakable
   )[
+    #set align(start + top)
     #table(
       columns: if line-numbers {2} else {1},
       inset: 0pt,
@@ -864,7 +951,7 @@
       row-gutter: row-gutter,
       column-gutter: column-gutter,
       align: if line-numbers {
-        (x, _) => (right+horizon, left).at(x)
+        (x, _) => (right+horizon, left+bottom).at(x)
       } else {
         left
       },
