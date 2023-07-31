@@ -146,7 +146,7 @@ And here's `code` with some styling options:
 
 ## Usage
 
-### algo
+### `algo`
 
 Makes a pseudocode element.
 
@@ -173,11 +173,11 @@ Parameters:
 *   `comment-styles`: `dictionary` &mdash; Styling options for comment text. Supports all parameters in Typst's native `text` function.
 *   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
 
-### i and d
+### `i` and `d`
 
 `#i` indents all following lines and `#d` dedents all following lines.
 
-### comment
+### `comment`
 
 Adds a comment to the line in which it's placed.
 
@@ -185,7 +185,7 @@ Parameters:
 
 *   `body`: `content` &mdash; Comment content.
 
-### code
+### `code`
 
 Makes a code block element.
 
