@@ -175,11 +175,11 @@ Parameters:
 
 ### `i` and `d`
 
-`#i` indents all following lines and `#d` dedents all following lines.
+For use in an `algo` body. `#i` indents all following lines and `#d` dedents all following lines.
 
 ### `comment`
 
-Adds a comment to the line in which it's placed.
+For use in an `algo` body. Adds a comment to the line in which it's placed.
 
 Parameters:
 
