@@ -138,8 +138,8 @@
     let line-parts = []
     let num-linebreaks = 0
 
-    for line in text-and-breaks {
-      if line == linebreak() {
+    for elem in text-and-breaks {
+      if elem == linebreak() {
         if line-parts != [] {
           joined-lines.push(line-parts)
           line-parts = []
@@ -151,7 +151,7 @@
           joined-lines.push([])
         }
       } else {
-        line-parts += [#line ]
+        line-parts += [#elem ]
         num-linebreaks = 0
       }
     }
