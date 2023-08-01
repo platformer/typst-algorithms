@@ -167,6 +167,7 @@ Parameters:
 *   `inset`: `length` &mdash; Size of inner padding.
 *   `fill`: `color` &mdash; Fill color.
 *   `stroke`: `stroke` &mdash; Stroke for the element's border.
+*   `radius`: `length` &mdash; Corner radius.
 *   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `algo` on the page. Using `none` will cause the internal `block` element to be returned as-is.
 *   `main-text-styles`: `dictionary` &mdash; Styling options for the main algorithm text. Supports all parameters in Typst's native `text` function.
@@ -201,6 +202,7 @@ Parameters:
 *   `inset`: `length` &mdash; Size of inner padding.
 *   `fill`: `color` &mdash; Fill color.
 *   `stroke`: `stroke` &mdash; Stroke for the element's border.
+*   `radius`: `length` &mdash; Corner radius.
 *   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `code` on the page. Using `none` will cause the internal `block` element to be returned as-is.
 *   `main-text-styles`: `dictionary` &mdash; Styling options for the main raw text. Supports all parameters in Typst's native `text` function.

@@ -616,6 +616,7 @@
 //   inset: Inner padding.
 //   fill: Fill color.
 //   stroke: Border stroke.
+//   radius: Corner radius.
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
 //   block-align: Alignment of block. Use none for no alignment.
@@ -641,6 +642,7 @@
   inset: 10pt,
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%),
+  radius: 0pt,
   breakable: false,
   block-align: center,
   main-text-styles: (:),
@@ -837,6 +839,7 @@
     height: auto,
     fill: fill,
     stroke: stroke,
+    radius: radius,
     inset: inset,
     outset: 0pt,
     breakable: breakable
@@ -874,6 +877,7 @@
 //   inset: Inner padding.
 //   fill: Fill color.
 //   stroke: Border stroke.
+//   radius: Corner radius.
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
 //   block-align: Alignment of block. Use none for no alignment.
@@ -892,6 +896,7 @@
   inset: 10pt,
   fill: rgb(98%, 98%, 98%),
   stroke: 1pt + rgb(50%, 50%, 50%),
+  radius: 0pt,
   breakable: false,
   block-align: center,
   main-text-styles: (:),
@@ -963,6 +968,7 @@
     width: auto,
     fill: fill,
     stroke: stroke,
+    radius: radius,
     inset: inset,
     breakable: breakable
   )[
