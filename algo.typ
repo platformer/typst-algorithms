@@ -96,6 +96,10 @@
 // Parameters:
 //   body: Algorithm content.
 #let _get-algo-lines(body) = {
+  if not body.has("children") {
+    return ()
+  }
+
   // concatenate consecutive non-whitespace elements
   // i.e. just combine everything that definitely aren't on separate lines
   let text-and-whitespaces = {
@@ -902,12 +906,20 @@
   main-text-styles: (:),
   line-number-styles: (:),
 ) = {
+  if not body.has("children") {
+    return
+  }
+
   let raw-children = body.children.filter(e => e.func() == raw)
 
-  assert(raw-children.len() > 0, message: "must provide raw text to code")
+  assert(
+    raw-children.len() > 0,
+    message: "algo: must provide raw text to code"
+  )
+
   assert(
     raw-children.len() == 1,
-    message: "cannot pass multiple raw text blocks to code"
+    message: "algo: cannot pass multiple raw text blocks to code"
   )
 
   let raw-text = raw-children.first()
