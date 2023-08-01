@@ -3,11 +3,11 @@
 //   _algo-comment-lists
 #let _algo-id-ckey = "_algo-id"
 
-// counter to track the current indent level in an algo element
-#let _algo-indent-ckey = "_algo-indent"
-
 // counter to track the number of lines in an algo element
 #let _algo-line-ckey = "_algo-line"
+
+// state value to track the current indent level in an algo element
+#let _algo-indent-level = state("_algo-indent-level", 0)
 
 // state value to track whether the current context is an algo element
 #let _algo-in-algo-context = state("_algo-in-algo-context", false)
@@ -64,6 +64,30 @@
 #let _special-characters = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 #let _alphanumerics = _alphabet + _numerals
 #let _ascii = _alphanumerics + _special-characters
+
+
+// Get the thickness of a stroke.
+// Credit to PgBiel on GitHub.
+#let _stroke-thickness(stroke) = {
+  if type(stroke) in ("length", "relative length") {
+    stroke
+  } else if type(stroke) == "color" {
+    1pt
+  } else if type(stroke) == "stroke" {
+    let r = regex("^\\d+(?:em|pt|cm|in|%)")
+    let s = repr(stroke).find(r)
+
+    if s == none {
+      1pt
+    } else {
+      eval(s)
+    }
+  } else if type(stroke) == "dictionary" and "thickness" in stroke {
+    stroke.thickness
+  } else {
+    1pt
+  }
+}
 
 
 // Returns list of content values, where each element is
@@ -174,13 +198,27 @@
         styles
       ).height
 
+      let text-and-descender-height = measure(
+        {
+          set text(..main-text-styles)
+          set text(bottom-edge: "descender")
+          raw(_ascii)
+        },
+        styles
+      ).height
+
+      let descender-length = text-and-descender-height - text-height
+
       set align(start + top)
-      box(
-        height: text-height,
-        clip: true,
-        move(
-          dy: -((text-height + line-spacing) * i),
-          styled-raw-text
+      move(
+        dy: descender-length * 0.5,
+        box(
+          height: text-and-descender-height,
+          clip: true,
+          move(
+            dy: -((text-height + line-spacing) * i),
+            styled-raw-text
+          )
         )
       )
     }), )
@@ -231,30 +269,6 @@
       calc.floor(starting-whitespace.len() / tab-size)
     }
   })
-}
-
-
-// Get the thickness of a stroke.
-// Credit to PgBiel on GitHub.
-#let _stroke-thickness(stroke) = {
-  if type(stroke) in ("length", "relative length") {
-    stroke
-  } else if type(stroke) == "color" {
-    1pt
-  } else if type(stroke) == "stroke" {
-    let r = regex("^\\d+(?:em|pt|cm|in|%)")
-    let s = repr(stroke).find(r)
-
-    if s == none {
-      1pt
-    } else {
-      eval(s)
-    }
-  } else if type(stroke) == "dictionary" and "thickness" in stroke {
-    stroke.thickness
-  } else {
-    1pt
-  }
 }
 
 
@@ -440,6 +454,7 @@
 // Parameters:
 //   indent-guides: Stroke for drawing indent guides.
 //   indent-guides-offset: Horizontal offset of indent guides.
+//   content: The main content that appears on the given line.
 //   line-index: The 0-based index of the given line.
 //   num-lines: The total number of lines in the current element.
 //   indent-level: The indent level at the given line.
@@ -453,6 +468,7 @@
 #let _code-indent-guides(
   indent-guides,
   indent-guides-offset,
+  content,
   line-index,
   num-lines,
   indent-level,
@@ -464,7 +480,13 @@
 ) = { style(styles => {
   // heuristically determine the height of the line
   let row-height = calc.max(
-    //height of raw text
+    // height of content
+    measure(
+      content,
+      styles
+    ).height,
+
+    // height of raw text
     measure(
       {
         set text(..main-text-styles)
@@ -533,8 +555,8 @@
 // All uses of #i within a line will be
 //   applied to the next line.
 #let i = {
-  _assert-in-algo("cannot use #i outside an algo element")
-  counter(_algo-indent-ckey).step()
+  _assert-in-algo("algo: cannot use #i outside an algo element")
+  _algo-indent-level.update(n => n + 1)
 }
 
 
@@ -542,12 +564,13 @@
 // All uses of #d within a line will be
 //   applied to the next line.
 #let d = {
-  _assert-in-algo("cannot use #d outside an algo element")
+  _assert-in-algo("algo: cannot use #d outside an algo element")
 
-  counter(_algo-indent-ckey).update(n => {
-    assert(n - 1 >= 0, message: "dedented too much")
-    n - 1
+  _algo-indent-level.display(n => {
+    assert(n - 1 >= 0, message: "algo: dedented too much")
   })
+
+  _algo-indent-level.update(n => n - 1)
 }
 
 
@@ -556,7 +579,7 @@
 // Parameters:
 //   body: Comment content.
 #let comment(body) = {
-  _assert-in-algo("cannot use #comment outside an algo element")
+  _assert-in-algo("algo: cannot use #comment outside an algo element")
 
   locate(loc => {
     let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
@@ -626,7 +649,7 @@
 ) = {
   counter(_algo-id-ckey).step()
   counter(_algo-line-ckey).update(0)
-  counter(_algo-indent-ckey).update(0)
+  _algo-indent-level.update(0)
   _algo-in-algo-context.update(true)
 
   // convert keywords to content values
@@ -654,7 +677,7 @@
         }
       }
 
-      counter(_algo-indent-ckey).display(indent-level => {
+      _algo-indent-level.display(indent-level => {
         if indent-guides != none {
           _algo-indent-guides(
             indent-guides,
@@ -917,6 +940,7 @@
         _code-indent-guides(
           indent-guides,
           indent-guides-offset,
+          line,
           i,
           lines.len(),
           indent-levels.at(i),
