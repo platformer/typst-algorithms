@@ -6,3 +6,7 @@
 !algo-examples.pdf
 !README.md
 !typst.toml
+
+!test
+!test/test.typ
+!test/test.pdf
