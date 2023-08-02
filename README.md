@@ -153,8 +153,9 @@ Makes a pseudocode element.
 Parameters:
 
 *   `body`: `content` &mdash; Main algorithm content.
-*   `title`: `string` or `content` &mdash; Algorithm title.
-*   `Parameters`: `array` &mdash; List of algorithm parameters. Elements can be `string` or `content` values. `string` values will automatically be displayed in math mode.
+*   `header`: `content` &mdash; Algorithm header. If specified, `title` and `parameters` are ignored.
+*   `title`: `string` or `content` &mdash; Algorithm title. Ignored if `header` is specified.
+*   `Parameters`: `array` &mdash; List of algorithm parameters. Elements can be `string` or `content` values. `string` values will automatically be displayed in math mode. Ignored if `header` is specified.
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
 *   `strong-keywords`: `boolean` &mdash; Whether to strongly emphasize keywords.
 *   `keywords`: `array` &mdash; List of terms to receive strong emphasis. Elements must be `string` values. Ignored if `strong-keywords` is `false`.

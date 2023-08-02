@@ -605,8 +605,9 @@
 //
 // Parameters:
 //   body: Algorithm content.
-//   title: Algorithm title.
-//   Parameters: Array of parameters.
+//   header: Algorithm header. Overrides title and parameters.
+//   title: Algorithm title. Ignored if header is not none.
+//   Parameters: Array of parameters. Ignored if header is not none.
 //   line-numbers: Whether to have line numbers.
 //   strong-keywords: Whether to have bold keywords.
 //   keywords: List of terms to receive strong emphasis if
@@ -632,6 +633,7 @@
 //     Supports any parameter in Typst's native text function.
 #let algo(
   body,
+  header: none,
   title: none,
   parameters: (),
   line-numbers: true,
@@ -714,8 +716,10 @@
   }
 
   // build algorithm header
-  let algo-header = {
-    set align(left)
+  let algo-header = if header != none {
+    header
+  } else {
+    set align(start)
 
     if title != none {
       set text(1.1em)
