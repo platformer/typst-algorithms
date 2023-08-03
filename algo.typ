@@ -910,7 +910,7 @@
   main-text-styles: (:),
   line-number-styles: (:),
 ) = {
-  if not body.has("children") {
+  if body == [] or not body.has("children") {
     return
   }
 

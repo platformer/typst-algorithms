@@ -124,13 +124,9 @@
 
 == Empty bodies
 
-#algo()[
+#algo()[]
 
-]
-
-#code()[
-
-]
+#code()[]
 
 == `code` with empty raw block
 
