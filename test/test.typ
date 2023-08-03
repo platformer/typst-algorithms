@@ -34,13 +34,13 @@
   def floyd_warshall(G):
     # let G be an adjacency matrix
     dist = G
-  
+    
     for k in range(len(G)):
       for i in range(len(G)):
         for j in range(len(G)):
           if dist[i][j] > dist[i][k] + dist[k][j]:
             dist[i][j] = dist[i][k] + dist[k][j]
-  
+    
     return dist
   ```
 ]
@@ -122,6 +122,23 @@
   ```
 ]
 
+== Empty bodies
+
+#algo()[
+
+]
+
+#code()[
+
+]
+
+== `code` with empty raw block
+
+#code()[
+  ```
+  ```
+]
+
 == `code` indent guides with custom tab size
 
 #table(
@@ -189,13 +206,13 @@
   def floyd_warshall(G):
     # let G be an adjacency matrix
     dist = G
-  
+    
     for k in range(len(G)):
       for i in range(len(G)):
         for j in range(len(G)):
           if dist[i][j] > dist[i][k] + dist[k][j]:
             dist[i][j] = dist[i][k] + dist[k][j]
-  
+    
     return dist
   ```
 ]
@@ -475,13 +492,13 @@
   def floyd_warshall(G):
     # let G be an adjacency matrix
     dist = G
-
+    
     for k in range(len(G)):
       for i in range(len(G)):
         for j in range(len(G)):
           if dist[i][j] > dist[i][k] + dist[k][j]:
             dist[i][j] = dist[i][k] + dist[k][j]
-
+    
     return dist
   ```
 ]
