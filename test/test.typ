@@ -135,6 +135,55 @@
   ```
 ]
 
+== Indent guides with line wrapping
+
+#table(
+  columns: 2,
+  stroke: none,
+  align: (x, _) => (right, left).at(x),
+  "indent-guides:", "1pt + black",
+)
+
+#algo(
+  title: "Floyd-Warshall",
+  parameters: ("V", "E", "w"),
+  indent-guides: 1pt + black,
+)[
+  Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
+  For $(u,v)$ in $E$:#i\
+    $"dist"[u,v] <- w(u,v)$ #comment[edge weights] #d\
+  For $v$ in $V$:#i\
+    $"dist"[v,v] <- 0$ #comment[base case] #d\
+  \
+  For $k <- 1$ to $|V|$:#i\
+    For $i <- 1$ to $|V|$:#i\
+      For $j <- 1$ to $|V|$:#i\
+        If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
+          $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$\
+          blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah#d#d#d#d\
+  \
+  Return $"dist"$
+]
+
+#code(
+  indent-guides: 1pt + black
+)[
+  ```py
+  def floyd_warshall(G):
+    # let G be an adjacency matrix
+    dist = G
+    
+    for k in range(len(G)):
+      for i in range(len(G)):
+        for j in range(len(G)):
+          if dist[i][j] > dist[i][k] + dist[k][j]:
+            dist[i][j] = dist[i][k] + dist[k][j]
+            blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah
+    
+    return dist
+  ```
+]
+
 == `code` indent guides with custom tab size
 
 #table(
