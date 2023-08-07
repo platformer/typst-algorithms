@@ -2,10 +2,12 @@
 
 !.gitignore
 !algo.typ
-!algo-examples.typ
-!algo-examples.pdf
 !README.md
 !typst.toml
+
+!examples
+!examples/examples.typ
+!examples/examples.pdf
 
 !test
 !test/test.typ
