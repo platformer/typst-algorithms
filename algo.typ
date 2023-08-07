@@ -66,30 +66,6 @@
 #let _ascii = _alphanumerics + _special-characters
 
 
-// Get the thickness of a stroke.
-// Credit to PgBiel on GitHub.
-#let _stroke-thickness(stroke) = {
-  if type(stroke) in ("length", "relative length") {
-    stroke
-  } else if type(stroke) == "color" {
-    1pt
-  } else if type(stroke) == "stroke" {
-    let r = regex("^\\d+(?:em|pt|cm|in|%)")
-    let s = repr(stroke).find(r)
-
-    if s == none {
-      1pt
-    } else {
-      eval(s)
-    }
-  } else if type(stroke) == "dictionary" and "thickness" in stroke {
-    stroke.thickness
-  } else {
-    1pt
-  }
-}
-
-
 // Returns list of content values, where each element is
 //   a line from the algo body
 //
@@ -305,7 +281,7 @@
   is-first-line,
   is-last-line,
 ) = {
-  let stroke-width = _stroke-thickness(stroke)
+  let stroke-width = stroke.thickness
 
   // lines are drawn relative to the top left of the bounding box for text
   // backset determines how far up the starting point should be moved
