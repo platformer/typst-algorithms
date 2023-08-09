@@ -1,6 +1,6 @@
 // check out the README to see all the options
 // for algo and code
-#import "../algo.typ": algo, i, d, comment, code
+#import "@preview/algo:0.3.0": algo, i, d, comment, code
 
 
 #algo(
