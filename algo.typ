@@ -1,7 +1,13 @@
-// counter to track the number of algo elements
-// used as an id when accessing:
-//   _algo-comment-lists
-#let _algo-id-ckey = "_algo-id"
+#import "@preview/tablex:0.0.5": gridx, colspanx, vlinex
+
+// State value to track whether the current context is an algo element.
+// If not, #i, #d, #comment, #no-emph commands should fail.
+#let _algo-in-algo-context = state("_algo-in-algo-context", false)
+
+// State value to track whether the current context is display mode.
+// If not, #i, #d, #comment commands will update relevant state;
+//   otherwise they do nothing.
+#let _algo-in-display-context = state("_algo-in-display-context", false)
 
 // state value for storing current comment-prefix passed to algo
 #let _algo-comment-prefix = state("_algo-comment-prefix", [])
@@ -9,19 +15,15 @@
 // state value for storing current comment-styles passed to algo
 #let _algo-comment-styles = state("_algo-comment-styles", (:))
 
-// counter to track the number of lines in an algo element
-#let _algo-line-ckey = "_algo-line"
+// State value to track the indent level of each line of an algo element.
+// Is a list where the ith element is an integer indicating the indent
+//   level of the (i+1)th line, since the first line cannot be indented.
+#let _algo-indent-levels = state("_algo-indent-levels", ())
 
-// state value to track the current indent level in an algo element
-#let _algo-indent-level = state("_algo-indent-level", 0)
-
-// state value to track whether the current context is an algo element
-#let _algo-in-algo-context = state("_algo-in-algo-context", false)
-
-// state value for storing algo comments
-// dictionary that maps algo ids (as strings) to a dictionary that maps
-//   line indexes (as strings) to the comment appearing on that line
-#let _algo-comment-dicts = state("_algo-comment-dicts", (:))
+// State value to track the comments on each line of an algo element.
+// Is a list where the ith element is the content of the comment on
+//   the ith line.
+#let _algo-comments = state("_algo-comments", ())
 
 // list of default keywords that will be highlighted by strong-keywords
 #let _algo-default-keywords = (
@@ -82,233 +84,48 @@
 }
 
 
-// Given data about a line in an algo or code, creates the
-//   indent guides that should appear on that line.
+// Asserts that the current context is an algo element.
+// Returns the provided message if the assertion fails.
 //
 // Parameters:
-//   stroke: Stroke for drawing indent guides.
-//   offset: Horizontal offset of indent guides.
-//   indent-level: The indent level on the given line.
-//   indent-size: The absolute length of a single indent.
-//   row-height: The absolute height of the containing row of the given line.
-//   block-inset: The absolute inset of the block containing all the lines.
-//     Used when determining the length of an indent guide that appears
-//     on the top or bottom of the block.
-//   row-gutter: The absolute gap between lines.
-//     Used when determining the length of an indent guide that appears
-//     next to other lines.
-//   is-first-line: Whether the given line is the first line in the block.
-//   is-last-line: Whether the given line is the last line in the block.
-//     If so, the length of the indent guide will depend on block-inset.
-#let _indent-guides(
-  stroke,
-  offset,
-  indent-level,
-  indent-size,
-  row-height,
-  block-inset,
-  row-gutter,
-  is-first-line,
-  is-last-line,
-) = {
-  let stroke-width = stroke.thickness
-
-  // lines are drawn relative to the top left of the bounding box for text
-  // backset determines how far up the starting point should be moved
-  let backset = if is-first-line {
-    0pt
-  } else {
-    row-gutter / 2
-  }
-
-  // determine how far the line should extend
-  let stroke-length = backset + row-height + (
-    if is-last-line {
-      calc.min(block-inset / 2, row-height / 4)
-    } else {
-      row-gutter / 2
-    }
-  )
-
-  // draw the indent guide for each indent level on the given line
-  for j in range(indent-level) {
-    box(
-      height: row-height,
-      width: 0pt,
-      align(
-        start + top,
-        place(
-          dx: indent-size * j + stroke-width / 2 + 0.5pt + offset,
-          dy: -backset,
-          line(
-            length: stroke-length,
-            angle: 90deg,
-            stroke: stroke
-          )
-        )
-      )
-    )
-  }
+//   message: Message to return if asssertion fails.
+#let _assert-in-algo(message) = {
+  _algo-in-algo-context.display(is-in-algo => {
+    _algo-assert(is-in-algo, message: message)
+  })
 }
 
 
-// Returns header to be displayed above algorithm content.
+// Layouts algo body in a hidden area off the page so that all internal
+//   commands are ran and all state values are primed for final display.
 //
 // Parameters:
-//   header: Algorithm header. Overrides title and parameters.
-//   title: Algorithm title. Ignored if header is not none.
-//   Parameters: Array of parameters. Ignored if header is not none.
-#let _build-algo-header(header, title, parameters) = {
-  if header != none {
-    header
-  } else {
-    set align(start)
+//   body: Algorithm content.
+#let _prepare-algo-state(body) = {
+  place(dx: -100%, hide({
+    show linebreak: {
+      _algo-indent-levels.update(indent-levels => {
+        indent-levels.push(indent-levels.last())
+        indent-levels
+      })
 
-    if title != none {
-      set text(1.1em)
-
-      if type(title) == "string" {
-        underline(smallcaps(title))
-      } else {
-        title
-      }
-
-      if parameters.len() == 0 {
-        $()$
-      }
+      _algo-comments.update(comments => {
+        comments.push([])
+        comments
+      })
     }
 
-    if parameters != () {
-      set text(1.1em)
-
-      $($
-
-      for (i, param) in parameters.enumerate() {
-        if type(param) == "string" {
-          math.italic(param)
-        } else {
-          param
-        }
-
-        if i < parameters.len() - 1 {
-          [, ]
-        }
-      }
-
-      $)$
-    }
-
-    if title != none or parameters != () {
-      [:]
-    }
-  }
+    _algo-indent-levels.update((0,))
+    _algo-comments.update(([],))
+    _algo-in-display-context.update(false)
+    body
+    _algo-in-display-context.update(true)
+  }))
 }
-
-
-// Create indent guides for a given line of an algo element.
-// Given the content of the line, calculates size of the content
-//   and creates indent guides of sufficient length.
-//
-// Parameters:
-//   indent-guides: Stroke for drawing indent guides.
-//   indent-guides-offset: Horizontal offset of indent guides.
-//   content: The main text that appears on the given line.
-//   line-index: The 0-based index of the given line.
-//   num-lines: The total number of lines in the current element.
-//   indent-level: The indent level at the given line.
-//   indent-size: The indent size used in the current element.
-//   block-inset: The inset of the current element.
-//   row-gutter: The row-gutter of the current element.
-//   main-text-styles: Dictionary of styling options for the algorithm steps.
-//   comment-styles: Dictionary of styling options for comment text.
-//   line-number-styles: Dictionary of styling options for the line numbers.
-#let _algo-indent-guides(
-  indent-guides,
-  indent-guides-offset,
-  content,
-  line-index,
-  num-lines,
-  indent-level,
-  indent-size,
-  block-inset,
-  row-gutter,
-  main-text-styles,
-  comment-styles,
-  line-number-styles,
-) = { locate(loc => style(styles => {
-  let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-  let line-index-str = str(line-index)
-  let comment-dicts = _algo-comment-dicts.final(loc)
-  let comment-content = comment-dicts.at(id-str, default: (:))
-                                     .at(line-index-str, default: [])
-
-  // heuristically determine the height of the containing table row
-  let row-height = calc.max(
-    // height of main content
-    measure(
-      {
-        set text(..main-text-styles)
-        _alphanumerics
-        content
-      },
-      styles
-    ).height,
-
-    // height of comment
-    measure(
-      {
-        set text(..comment-styles)
-        comment-content
-      },
-      styles
-    ).height,
-
-    // height of line numbers
-    measure(
-      {
-        set text(..line-number-styles)
-        _numerals
-      },
-      styles
-    ).height
-  )
-
-  // converting input parameters to absolute lengths
-  let indent-size-abs = measure(
-    rect(width: indent-size),
-    styles
-  ).width
-
-  let block-inset-abs = measure(
-    rect(width: block-inset),
-    styles
-  ).width
-
-  let row-gutter-abs = measure(
-    rect(width: row-gutter),
-    styles
-  ).width
-
-  let is-first-line = line-index == 0
-  let is-last-line = line-index == num-lines - 1
-
-  // display indent guides at the current line
-  _indent-guides(
-    indent-guides,
-    indent-guides-offset,
-    indent-level,
-    indent-size-abs,
-    row-height,
-    block-inset-abs,
-    row-gutter-abs,
-    is-first-line,
-    is-last-line
-  )
-}))}
 
 
 // Returns list of content values, where each element is
-//   a line from the algo body
+//   a line from the algo body.
 //
 // Parameters:
 //   body: Algorithm content.
@@ -318,7 +135,8 @@
   }
 
   // concatenate consecutive non-whitespace elements
-  // i.e. just combine everything that definitely aren't on separate lines
+  // i.e. just combine everything that definitely
+  //      aren't on separate lines
   let text-and-whitespaces = {
     let joined-children = ()
     let temp = []
@@ -388,37 +206,14 @@
 }
 
 
-// Returns list of algorithm lines with strongly emphasized keywords,
-//   correct indentation, and indent guides.
+// Returns list of algorithm lines with strongly emphasized keywords.
 //
 // Parameters:
 //   lines: List of algorithm lines from _get-algo-lines().
-//   strong-keywords: Whether to have bold keywords.
-//   keywords: List of terms to receive strong emphasis if
-//     strong-keywords is true.
-//   indent-size: Size of line indentations.
-//   indent-guides: Stroke for indent guides.
-//   indent-guides-offset: Horizontal offset of indent guides.
-//   inset: Inner padding.
-//   row-gutter: Space between lines.
-//   main-text-styles: Dictionary of styling options for the algorithm steps.
-//   comment-styles: Dictionary of styling options for comment text.
-//   line-number-styles: Dictionary of styling options for the line numbers.
-#let _build-formatted-algo-lines(
-  lines,
-  strong-keywords,
-  keywords,
-  indent-size,
-  indent-guides,
-  indent-guides-offset,
-  inset,
-  row-gutter,
-  main-text-styles,
-  comment-styles,
-  line-number-styles
-) = {
+//   keywords: List of keywords to receive strong emphasis.
+#let _strongly-emphasize-keywords(lines, keywords) = {
   // convert keywords to content values
-  keywords = keywords.map(e => {
+  let content-keywords = keywords.map(e => {
     if type(e) == "string" {
       [#e]
     } else {
@@ -426,161 +221,216 @@
     }
   })
 
-  let formatted-lines = ()
+  lines.map(line => {
+    show regex("\S+"): it => {
+      if it in content-keywords {
+        strong(it)
+      } else {
+        it
+      }
+    }
 
-  for (i, line) in lines.enumerate() {
-    let formatted-line = {
-      // bold keywords
-      show regex("\S+"): it => {
-        if strong-keywords and it in keywords {
-          strong(it)
+    line
+  })
+}
+
+
+// Returns header to be displayed above algorithm content.
+//
+// Parameters:
+//   header: Algorithm header. Overrides title and parameters.
+//   title: Algorithm title. Ignored if header is not none.
+//   Parameters: Array of parameters. Ignored if header is not none.
+#let _build-algo-header(header, title, parameters) = {
+  if header != none {
+    header
+  } else {
+    set align(start)
+
+    if title != none {
+      set text(1.1em)
+
+      if type(title) == "string" {
+        underline(smallcaps(title))
+      } else {
+        title
+      }
+
+      if parameters.len() == 0 {
+        $()$
+      }
+    }
+
+    if parameters != () {
+      set text(1.1em)
+
+      $($
+
+      for (i, param) in parameters.enumerate() {
+        if type(param) == "string" {
+          math.italic(param)
         } else {
-          it
+          param
+        }
+
+        if i < parameters.len() - 1 {
+          [, ]
         }
       }
 
-      _algo-indent-level.display(indent-level => {
-        if indent-guides != none {
-          _algo-indent-guides(
-            indent-guides,
-            indent-guides-offset,
-            line,
-            i,
-            lines.len(),
-            indent-level,
-            indent-size,
-            inset,
-            row-gutter,
-            main-text-styles,
-            comment-styles,
-            line-number-styles
-          )
-        }
-
-        box(pad(
-          left: indent-size * indent-level,
-          line
-        ))
-      })
-
-      counter(_algo-line-ckey).step()
+      $)$
     }
 
-    formatted-lines.push(formatted-line)
+    if title != none or parameters != () {
+      [:]
+    }
   }
-
-  return formatted-lines
 }
 
 
 // Layouts algo content in a table.
 //
 // Parameters:
-//   formatted-lines: List of formatted algorithm lines.
+//   lines: List of algorithm lines from _get-algo-lines().
 //   line-numbers: Whether to have line numbers.
 //   comment-prefix: Content to prepend comments with.
+//   indent-size: Size of line indentations.
+//   indent-guides: Stroke for indent guides.
+//   indent-guides-offset: Horizontal offset of indent guides.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers, text, and comments.
 //   main-text-styles: Dictionary of styling options for the algorithm steps.
 //   comment-styles: Dictionary of styling options for comment text.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 #let _build-algo-table(
-  formatted-lines,
+  lines,
   line-numbers,
   comment-prefix,
+  indent-size,
+  indent-guides,
+  indent-guides-offset,
   row-gutter,
   column-gutter,
   main-text-styles,
   comment-styles,
   line-number-styles,
-) = { locate(loc => {
-  let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-  let comment-dicts = _algo-comment-dicts.final(loc)
-  let has-comments = id-str in comment-dicts
+) = { _algo-indent-levels.display(indent-levels => {
+      _algo-comments.display(comments => {
+  _algo-assert(
+    indent-guides-offset >= 0pt,
+    message: "indent-guides-offset cannot be negative"
+  )
 
-  let comment-contents = if has-comments {
-    let comments = comment-dicts.at(id-str)
+  _algo-assert(
+    indent-guides-offset < indent-size,
+    message: "indent-guides-offset must be less than indent-size"
+  )
 
-    range(formatted-lines.len()).map(i => {
-      let index-str = str(i)
+  let has-indent-guides = indent-guides != none
+  let has-comments = comments.any(e => e != [])
+  let max-indent = calc.max(..indent-levels)
 
-      if index-str in comments {
-        comments.at(index-str)
-      } else {
-        none
-      }
-    })
-  } else {
-    none
-  }
-
-  let num-columns = 1 + int(line-numbers) + int(has-comments)
+  let num-columns = (
+    1 +
+    max-indent +
+    int(has-indent-guides) * max-indent +
+    int(line-numbers) * 2 +
+    int(has-comments) * 2
+  )
 
   let align-func = {
     let alignments = ()
 
     if line-numbers {
-      alignments.push(right + horizon)
+      alignments.push(right)
+      alignments += (left,) * (num-columns - 1)
+    } else {
+      alignments += (left,) * num-columns
     }
 
-    alignments.push(left + bottom)
+    (x, _) => alignments.at(x) + horizon
+  }
 
-    if has-comments {
-      alignments.push(left + bottom)
+  let (pre-indent-guide-space, post-indent-guide-space) = {
+    if has-indent-guides {
+      let pre-spacing = (
+        indent-guides-offset +
+        indent-guides.thickness / 2 +
+        0.5pt
+      )
+
+      (pre-spacing, indent-size - pre-spacing)
+    } else {
+      (none, indent-size)
     }
-
-    (x, _) => alignments.at(x)
   }
 
   let table-data = ()
 
-  for (i, line) in formatted-lines.enumerate() {
-    if line-numbers {
-      let line-number = i + 1
+  for (i, line) in lines.enumerate() {
+    let indent-level = if i == 0 {0} else {indent-levels.at(i - 1)}
+    let line-number = i + 1
 
+    let text-col-span = (
+      1 + (max-indent - indent-level) * (int(has-indent-guides) + 1)
+    )
+
+    if line-numbers {
       table-data.push({
         set text(..line-number-styles)
         str(line-number)
       })
+
+      table-data.push(h(column-gutter))
     }
 
-    table-data.push({
-      set text(..main-text-styles)
-      line
-    })
+    for j in range(indent-level) {
+      if has-indent-guides {
+        table-data += (
+          h(pre-indent-guide-space),
+          vlinex(
+            start: i,
+            end: i+1,
+            stop-pre-gutter: true,
+            expand: row-gutter / 2,
+            stroke: indent-guides,
+          )
+        )
+      }
+
+      table-data.push(h(post-indent-guide-space))
+    }
+
+    table-data.push(colspanx(text-col-span)[
+      #set text(..main-text-styles)
+      #line
+    ])
 
     if has-comments {
-      if comment-contents.at(i) == none {
-        table-data.push([])
-      } else {
-        table-data.push({
-          set text(..comment-styles)
+      table-data.push(h(column-gutter))
+
+      table-data.push({
+        set text(..comment-styles)
+
+        if comments.at(i) != [] {
           comment-prefix
-          comment-contents.at(i)
-        })
-      }
+        }
+
+        comments.at(i)
+      })
     }
   }
 
-  table(
+  gridx(
     columns: num-columns,
+    column-gutter: 0pt,
     row-gutter: row-gutter,
-    column-gutter: column-gutter,
     align: align-func,
     stroke: none,
     inset: 0pt,
     ..table-data
   )
-})}
-
-
-// Asserts that the current context is an algo element.
-// Returns the provided message if the assertion fails.
-#let _assert-in-algo(message) = {
-  _algo-in-algo-context.display(is-in-algo => {
-    _algo-assert(is-in-algo, message: message)
-  })
-}
+})})}
 
 
 // Increases indent in an algo element.
@@ -588,7 +438,15 @@
 //   applied to the next line.
 #let i = {
   _assert-in-algo("cannot use #i outside an algo element")
-  _algo-indent-level.update(n => n + 1)
+
+  _algo-in-display-context.display(in-display-context => {
+    if not in-display-context {
+      _algo-indent-levels.update(indent-levels => {
+        indent-levels.last() += 1
+        indent-levels
+      })
+    }
+  })
 }
 
 
@@ -598,11 +456,16 @@
 #let d = {
   _assert-in-algo("cannot use #d outside an algo element")
 
-  _algo-indent-level.display(n => {
-    _algo-assert(n - 1 >= 0, message: "dedented too much")
+  _algo-in-display-context.display(in-display-context => {
+    if not in-display-context {
+      _algo-indent-levels.update(indent-levels => {
+        let new-indent-level = indent-levels.last() - 1
+        _algo-assert(new-indent-level >= 0, message: "dedented too much")
+        indent-levels.last() = new-indent-level
+        indent-levels
+      })
+    }
   })
-
-  _algo-indent-level.update(n => n - 1)
 }
 
 
@@ -637,18 +500,13 @@
       })
     })
   } else {
-    locate(loc => {
-      let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-      let line-index-str = str(counter(_algo-line-ckey).at(loc).at(0))
-
-      _algo-comment-dicts.update(comment-dicts => {
-        let comments = comment-dicts.at(id-str, default: (:))
-        let ongoing-comment = comments.at(line-index-str, default: [])
-        let comment-content = ongoing-comment + body
-        comments.insert(line-index-str, comment-content)
-        comment-dicts.insert(id-str, comments)
-        comment-dicts
-      })
+    _algo-in-display-context.display(in-display-context => {
+      if not in-display-context {
+        _algo-comments.update(comments => {
+          comments.last() += body
+          comments
+        })
+      }
     })
   }
 }
@@ -705,37 +563,30 @@
   breakable: false,
   block-align: center,
   main-text-styles: (:),
-  comment-styles: ("fill": rgb(45%, 45%, 45%)),
+  comment-styles: (fill: rgb(45%, 45%, 45%)),
   line-number-styles: (:),
 ) = {
-  counter(_algo-id-ckey).step()
-  counter(_algo-line-ckey).update(0)
+  _algo-in-algo-context.update(true)
   _algo-comment-prefix.update(comment-prefix)
   _algo-comment-styles.update(comment-styles)
-  _algo-indent-level.update(0)
-  _algo-in-algo-context.update(true)
+  _prepare-algo-state(body)
+  let lines = _get-algo-lines(body)
+
+  let formatted-lines = if strong-keywords {
+    _strongly-emphasize-keywords(lines, keywords)
+  } else {
+    lines
+  }
 
   let algo-header = _build-algo-header(header, title, parameters)
-
-  let lines = _get-algo-lines(body)
-  let formatted-lines = _build-formatted-algo-lines(
-    lines,
-    strong-keywords,
-    keywords,
-    indent-size,
-    indent-guides,
-    indent-guides-offset,
-    inset,
-    row-gutter,
-    main-text-styles,
-    comment-styles,
-    line-number-styles,
-  )
 
   let algo-table = _build-algo-table(
     formatted-lines,
     line-numbers,
     comment-prefix,
+    indent-size,
+    indent-guides,
+    indent-guides-offset,
     row-gutter,
     column-gutter,
     main-text-styles,
@@ -769,6 +620,50 @@
   }
 
   _algo-in-algo-context.update(false)
+}
+
+
+// Determines tab size being used by the given text.
+// Searches for the first line that starts with whitespace and
+//   returns the number of spaces the line starts with. If no
+//   such line is found, -1 is returned.
+//
+// Parameters:
+//   line-strs: Array of strings, where each string is a line from the
+//     provided raw text.
+#let _get-code-tab-size(line-strs) = {
+  for line in line-strs {
+    let starting-whitespace = line.replace(regex("\t"), "")
+                                  .find(regex("^ +"))
+
+    if starting-whitespace != none {
+      return starting-whitespace.len()
+    }
+  }
+
+  return -1
+}
+
+
+// Determines the indent level at each line of the given text.
+// Returns a list of integers, where the ith integer is the indent
+//   level of the ith line.
+//
+// Parameters:
+//   line-strs: Array of strings, where each string is a line from the
+//     provided raw text.
+//   tab-size: Tab-size used by the given code.
+#let _get-code-indent-levels(line-strs, tab-size) = {
+  line-strs.map(line => {
+    let starting-whitespace = line.replace(regex("\t"), "")
+                                  .find(regex("^ +"))
+
+    if starting-whitespace == none {
+      0
+    } else {
+      calc.floor(starting-whitespace.len() / tab-size)
+    }
+  })
 }
 
 
@@ -812,68 +707,31 @@
 }
 
 
-// Determines tab size being used by the given text.
-// Searches for the first line that starts with whitespace and
-//   returns the number of spaces the line starts with. If no
-//   such line is found, -1 is returned.
-//
-// Parameters:
-//   line-strs: Array of strings, where each string is a line from the
-//     provided raw text.
-#let _get-code-tab-size(line-strs) = {
-  for line in line-strs {
-    let starting-whitespace = line.replace(regex("\t"), "").find(regex("^ +"))
-
-    if starting-whitespace != none {
-      return starting-whitespace.len()
-    }
-  }
-
-  return -1
-}
-
-
-// Determines the indent level at each line of the given text.
-// Returns a list of integers, where the ith integer is the indent
-//   level of the ith line.
-//
-// Parameters:
-//   line-strs: Array of strings, where each string is a line from the
-//     provided raw text.
-//   tab-size: tab-size used by the given code
-#let _get-code-indent-levels(line-strs, tab-size) = {
-  line-strs.map(line => {
-    let starting-whitespace = line.replace(regex("\t"), "").find(regex("^ +"))
-
-    if starting-whitespace == none {
-      0
-    } else {
-      calc.floor(starting-whitespace.len() / tab-size)
-    }
-  })
-}
-
-
-// Returns list of tuples, where the ith tuple contains:
+// Returns list of tuples, where the ith tuple contains the following:
 //   - a list of boxed clips of each line-wrapped component of the ith line
 //   - an integer indicating the indent level of the ith line
 //
 // Parameters:
 //   raw-text: Raw text block.
+//   line-strs: Array of strings, where each string is a line from the
+//     provided raw text.
 //   line-numbers: Whether there are line numbers.
+//   indent-size: Width of an indent.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding of containing block.
 //   main-text-styles: Dictionary of styling options for the source code.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 //   text-height: Height of raw text, baseline to cap-height.
-//   ascender-height: Height of raw text ascenders.
-//   descender-height: Height of raw text descenders.
+//   ascender-height: Length of raw text ascenders.
+//   descender-height: Length of raw text descenders.
 //   indent-levels: List of integers indicating indent levels of each line.
 //   container-size: Size of the outer container.
 //   styles: Active styles.
 #let _get-code-line-data(
   raw-text,
+  line-strs,
   line-numbers,
+  indent-size,
   column-gutter,
   inset,
   main-text-styles,
@@ -883,10 +741,9 @@
   descender-height,
   indent-levels,
   container-size,
-  styles
+  styles,
 ) = {
   let line-spacing = 100pt
-  let line-strs = raw-text.text.split("\n")
   let num-lines = line-strs.len()
   let container-width = container-size.width
 
@@ -939,10 +796,11 @@
         box(move(
           dy: descender-height * 0.5,
           box(
-            width: real-text-width,
+            width: real-text-width - indent-size * real-indent-level,
             height: text-height + ascender-height + descender-height,
             clip: true,
             move(
+              dx: -(indent-size * real-indent-level),
               dy: -((text-height+line-spacing) * line-count) + ascender-height,
               styled-raw-text
             )
@@ -961,107 +819,25 @@
 }
 
 
-// Create indent guides for a given line of a code element.
-// Given the content of the line, calculates size of the content
-//   and creates indent guides of sufficient length.
-//
-// Parameters:
-//   indent-guides: Stroke for drawing indent guides.
-//   indent-guides-offset: Horizontal offset of indent guides.
-//   content: The main content that appears on the given line.
-//   line-index: The 0-based index of the given line.
-//   num-lines: The total number of lines in the current element.
-//   indent-level: The indent level at the given line.
-//   tab-size: Amount of spaces that should be considered an indent.
-//   block-inset: The inset of the current element.
-//   row-gutter: The row-gutter of the current element.
-//   main-text-styles: Dictionary of styling options for the source code.
-//     Supports any parameter in Typst's native text function.
-//   line-number-styles: Dictionary of styling options for the line numbers.
-//     Supports any parameter in Typst's native text function.
-#let _code-indent-guides(
-  indent-guides,
-  indent-guides-offset,
-  content,
-  line-index,
-  num-lines,
-  indent-level,
-  tab-size,
-  block-inset,
-  row-gutter,
-  main-text-styles,
-  line-number-styles,
-) = { style(styles => {
-  // heuristically determine the height of the row
-  let row-height = calc.max(
-    // height of content
-    measure(content, styles).height,
-
-    // height of raw text
-    measure({
-      show raw: set text(..main-text-styles)
-      raw(_ascii)
-    }, styles).height,
-
-    // height of line numbers
-    measure({
-      set text(..line-number-styles)
-      _numerals
-    }, styles).height
-  )
-
-  let indent-size = measure({
-    show raw: set text(..main-text-styles)
-    raw("a" * tab-size)
-  }, styles).width
-
-  // converting input parameters to absolute lengths
-  let block-inset-abs = measure(rect(width: block-inset), styles).width
-  let row-gutter-abs = measure(rect(width: row-gutter), styles).width
-
-  let is-first-line = line-index == 0
-  let is-last-line = line-index == num-lines - 1
-
-  // display indent guides at the current line
-  _indent-guides(
-    indent-guides,
-    indent-guides-offset,
-    indent-level,
-    indent-size,
-    row-height,
-    block-inset-abs,
-    row-gutter-abs,
-    is-first-line,
-    is-last-line
-  )
-})}
-
-
 // Layouts code content in a table.
 //
 // Parameters:
 //   line-data: Data received from _get-code-line-data().
-//   indent-levels: List of indent levels from _get-code-indent-levels().
 //   line-numbers: Whether to have line numbers.
+//   indent-size: Width of an indent.
 //   indent-guides: Stroke for indent guides.
 //   indent-guides-offset: Horizontal offset of indent guides.
-//   tab-size: Amount of spaces that should be considered an indent.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
-//   inset: Inner padding.
-//   main-text-styles: Dictionary of styling options for the source code.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 #let _build-code-table(
   line-data,
-  indent-levels,
   line-numbers,
+  indent-size,
   indent-guides,
   indent-guides-offset,
-  tab-size,
   row-gutter,
   column-gutter,
-  inset,
-  main-text-styles,
   line-number-styles,
 ) = {
   let flattened-line-data = line-data.fold((), (acc, e) => {
@@ -1077,12 +853,53 @@
     acc
   })
 
+  let has-indent-guides = indent-guides != none
+  let max-indent = calc.max(..flattened-line-data.map(e => e.at(2)))
+
+  let num-columns = (
+    1 +
+    max-indent +
+    int(has-indent-guides) * max-indent +
+    int(line-numbers) * 2
+  )
+
+  let align-func = {
+    let alignments = ()
+
+    if line-numbers {
+      alignments.push(right)
+      alignments += (left,) * (num-columns - 1)
+    } else {
+      alignments += (left,) * num-columns
+    }
+
+    (x, _) => alignments.at(x) + horizon
+  }
+
+  let (pre-indent-guide-space, post-indent-guide-space) = {
+    if has-indent-guides {
+      let pre-spacing = (
+        indent-guides-offset +
+        indent-guides.thickness / 2 +
+        0.5pt
+      )
+
+      (pre-spacing, indent-size - pre-spacing)
+    } else {
+      (none, indent-size)
+    }
+  }
+
   let table-data = ()
 
   for (i, info) in flattened-line-data.enumerate() {
     let line-clip = info.at(0)
     let is-wrapped = info.at(1)
     let indent-level = info.at(2)
+
+    let text-col-span = (
+      1 + (max-indent - indent-level) * (int(has-indent-guides) + 1)
+    )
 
     if line-numbers {
       if is-wrapped {
@@ -1093,43 +910,37 @@
           str(i + 1)
         })
       }
+
+      table-data.push(h(column-gutter))
     }
 
-    let content = {
-      if indent-guides != none {
-        _code-indent-guides(
-          indent-guides,
-          indent-guides-offset,
-          line-clip,
-          i,
-          flattened-line-data.len(),
-          indent-level,
-          tab-size,
-          inset,
-          row-gutter,
-          main-text-styles,
-          line-number-styles
+    for j in range(indent-level) {
+      if has-indent-guides {
+        table-data += (
+          h(pre-indent-guide-space),
+          vlinex(
+            start: i,
+            end: i+1,
+            stop-pre-gutter: true,
+            expand: row-gutter / 2,
+            stroke: indent-guides,
+          )
         )
       }
 
-      box(line-clip)
+      table-data.push(h(post-indent-guide-space))
     }
 
-    table-data.push(content)
+    table-data.push(colspanx(text-col-span, line-clip))
   }
 
-  table(
-    columns: if line-numbers {2} else {1},
-    inset: 0pt,
-    stroke: none,
-    fill: none,
+  gridx(
+    columns: num-columns,
+    column-gutter: 0pt,
     row-gutter: row-gutter,
-    column-gutter: column-gutter,
-    align: if line-numbers {
-      (x, _) => (right+horizon, left+bottom).at(x)
-    } else {
-      left
-    },
+    align: align-func,
+    stroke: none,
+    inset: 0pt,
     ..table-data
   )
 }
@@ -1173,7 +984,7 @@
   block-align: center,
   main-text-styles: (:),
   line-number-styles: (:),
-) = { layout(size => style(styles => {
+) = { layout(container-size => style(styles => {
   let raw-text = if body.func() == raw {
     body
   } else if body != [] and body.has("children") {
@@ -1200,6 +1011,27 @@
 
   let line-strs = raw-text.text.split("\n")
 
+  let effective-tab-size = if tab-size == auto {
+    _get-code-tab-size(line-strs)
+  } else {
+    tab-size
+  }
+
+  let (indent-size, indent-levels) = if effective-tab-size == -1 {
+    (
+      0pt,
+      (0,) * line-strs.len()
+    )
+  } else {
+    (
+      measure({
+        set text(..main-text-styles)
+        raw("a" * effective-tab-size)
+      }, styles).width,
+      _get-code-indent-levels(line-strs, effective-tab-size)
+    )
+  }
+
   let (text-height, asc-height, desc-height) = _get-code-text-height(
     main-text-styles,
     styles
@@ -1207,22 +1039,11 @@
 
   let real-row-gutter = calc.max(0pt, row-gutter - asc-height - desc-height)
 
-  let real-tab-size = if tab-size == auto {
-    _get-code-tab-size(line-strs)
-  } else {
-    tab-size
-  }
-
-  // no indents exist, so ignore indent-guides
-  let (real-indent-guides, indent-levels) = if real-tab-size == -1 {
-    (none, (0,) * line-strs.len())
-  } else {
-    (indent-guides, _get-code-indent-levels(line-strs, real-tab-size))
-  }
-
   let line-data = _get-code-line-data(
     raw-text,
+    line-strs,
     line-numbers,
+    indent-size,
     column-gutter,
     inset,
     main-text-styles,
@@ -1231,25 +1052,21 @@
     asc-height,
     desc-height,
     indent-levels,
-    size,
+    container-size,
     styles,
   )
 
   let code-table = _build-code-table(
     line-data,
-    indent-levels,
     line-numbers,
-    real-indent-guides,
+    indent-size,
+    indent-guides,
     indent-guides-offset,
-    real-tab-size,
     real-row-gutter,
     column-gutter,
-    inset,
-    main-text-styles,
     line-number-styles,
   )
 
-  // build block
   let code-block = block(
     width: auto,
     fill: fill,
