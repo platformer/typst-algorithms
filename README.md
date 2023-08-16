@@ -150,7 +150,34 @@ And here's `code` with some styling options:
 
 Makes a pseudocode element.
 
-Parameters:
+```typst
+algo(
+  body,
+  header: none,
+  title: none,
+  parameters: (),
+  line-numbers: true,
+  strong-keywords: true,
+  keywords: _algo-default-keywords,
+  comment-prefix: "// ",
+  indent-size: 20pt,
+  indent-guides: none,
+  indent-guides-offset: 0pt,
+  row-gutter: 10pt,
+  column-gutter: 10pt,
+  inset: 10pt,
+  fill: rgb(98%, 98%, 98%),
+  stroke: 1pt + rgb(50%, 50%, 50%),
+  radius: 0pt,
+  breakable: false,
+  block-align: center,
+  main-text-styles: (:),
+  comment-styles: (fill: rgb(45%, 45%, 45%)),
+  line-number-styles: (:),
+)
+```
+
+**Parameters:**
 
 *   `body`: `content` &mdash; Main algorithm content.
 *   `header`: `content` &mdash; Algorithm header. If specified, `title` and `parameters` are ignored.
@@ -183,7 +210,7 @@ For use in an `algo` body. `#i` indents all following lines and `#d` dedents all
 
 For use in an `algo` body. Adds a comment to the line in which it's placed.
 
-Parameters:
+**Parameters:**
 
 *   `body`: `content` &mdash; Comment content.
 
@@ -191,7 +218,27 @@ Parameters:
 
 Makes a code block element.
 
-Parameters:
+```typst
+code(
+  body,
+  line-numbers: true,
+  indent-guides: none,
+  indent-guides-offset: 0pt,
+  tab-size: auto,
+  row-gutter: 10pt,
+  column-gutter: 10pt,
+  inset: 10pt,
+  fill: rgb(98%, 98%, 98%),
+  stroke: 1pt + rgb(50%, 50%, 50%),
+  radius: 0pt,
+  breakable: false,
+  block-align: center,
+  main-text-styles: (:),
+  line-number-styles: (:),
+)
+```
+
+**Parameters:**
 
 *   `body`: `content` &mdash; Main content. Expects `raw` text.
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
