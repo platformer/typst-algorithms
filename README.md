@@ -210,9 +210,17 @@ For use in an `algo` body. `#i` indents all following lines and `#d` dedents all
 
 For use in an `algo` body. Adds a comment to the line in which it's placed.
 
+```typst
+comment(
+  body,
+  inline: false,
+)
+```
+
 **Parameters:**
 
 *   `body`: `content` &mdash; Comment content.
+*   `inline`: `boolean` &mdash; If true, the comment is displayed in place rather than on the right side. NOTE: inline comments will respect both `main-text-styles` and `comment-styles`, preferring `comment-styles` when the two conflict.
 
 ### `code`
 

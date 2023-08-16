@@ -23,6 +23,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -91,6 +92,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -158,6 +160,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$\
           blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah#d#d#d#d\
@@ -238,6 +241,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -285,6 +289,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -314,6 +319,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -341,6 +347,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -368,6 +375,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -394,6 +402,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -423,6 +432,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -450,6 +460,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -478,7 +489,7 @@
       strong("Outputs:"),
       [distance matrix $"dist"$]
     ))
-    align(center, line(length: 320pt))
+    align(center, line(length: 330pt))
   }
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
@@ -490,6 +501,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -523,6 +535,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -573,6 +586,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -623,6 +637,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -673,6 +688,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -704,6 +720,7 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
@@ -757,13 +774,14 @@
   For $k <- 1$ to $|V|$:#i\
     For $i <- 1$ to $|V|$:#i\
       For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
   Return $"dist"$
 ]
 
-#v(450pt)
+#v(440pt)
 #code(
   indent-guides: 1pt + black,
   breakable: true,

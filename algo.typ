@@ -3,6 +3,12 @@
 //   _algo-comment-lists
 #let _algo-id-ckey = "_algo-id"
 
+// state value for storing current comment-prefix passed to algo
+#let _algo-comment-prefix = state("_algo-comment-prefix", [])
+
+// state value for storing current comment-styles passed to algo
+#let _algo-comment-styles = state("_algo-comment-styles", (:))
+
 // counter to track the number of lines in an algo element
 #let _algo-line-ckey = "_algo-line"
 
@@ -604,22 +610,36 @@
 //
 // Parameters:
 //   body: Comment content.
-#let comment(body) = {
+//   inline: Whether the comment should be displayed in place.
+#let comment(
+  body,
+  inline: false,
+) = {
   _assert-in-algo("cannot use #comment outside an algo element")
 
-  locate(loc => {
-    let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-    let line-index-str = str(counter(_algo-line-ckey).at(loc).at(0))
-
-    _algo-comment-dicts.update(comment-dicts => {
-      let comments = comment-dicts.at(id-str, default: (:))
-      let ongoing-comment = comments.at(line-index-str, default: [])
-      let comment-content = ongoing-comment + body
-      comments.insert(line-index-str, comment-content)
-      comment-dicts.insert(id-str, comments)
-      comment-dicts
+  if inline {
+    _algo-comment-prefix.display(comment-prefix => {
+      _algo-comment-styles.display(comment-styles => {
+        set text(..comment-styles)
+        comment-prefix
+        body
+      })
     })
-  })
+  } else {
+    locate(loc => {
+      let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+      let line-index-str = str(counter(_algo-line-ckey).at(loc).at(0))
+
+      _algo-comment-dicts.update(comment-dicts => {
+        let comments = comment-dicts.at(id-str, default: (:))
+        let ongoing-comment = comments.at(line-index-str, default: [])
+        let comment-content = ongoing-comment + body
+        comments.insert(line-index-str, comment-content)
+        comment-dicts.insert(id-str, comments)
+        comment-dicts
+      })
+    })
+  }
 }
 
 
@@ -679,6 +699,8 @@
 ) = {
   counter(_algo-id-ckey).step()
   counter(_algo-line-ckey).update(0)
+  _algo-comment-prefix.update(comment-prefix)
+  _algo-comment-styles.update(comment-styles)
   _algo-indent-level.update(0)
   _algo-in-algo-context.update(true)
 
