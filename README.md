@@ -173,7 +173,7 @@ algo(
   block-align: center,
   main-text-styles: (:),
   comment-styles: (fill: rgb(45%, 45%, 45%)),
-  line-number-styles: (:),
+  line-number-styles: (:)
 )
 ```
 
@@ -213,14 +213,34 @@ For use in an `algo` body. Adds a comment to the line in which it's placed.
 ```typst
 comment(
   body,
-  inline: false,
+  inline: false
 )
 ```
 
 **Parameters:**
 
 *   `body`: `content` &mdash; Comment content.
-*   `inline`: `boolean` &mdash; If true, the comment is displayed in place rather than on the right side. NOTE: inline comments will respect both `main-text-styles` and `comment-styles`, preferring `comment-styles` when the two conflict.
+*   `inline`: `boolean` &mdash; If true, the comment is displayed in place rather than on the right side.
+
+    NOTE: inline comments will respect both `main-text-styles` and `comment-styles`, preferring `comment-styles` when the two conflict.
+
+    NOTE: to make inline comments insensitive to `strong-keywords`, strong emphasis is disabled within them. This can be circumvented via the `text` function:
+
+        `#comment(inline: true)[#text(weight: 700)[...]]`
+
+### `no-emph`
+
+For use in an `algo` body. Prevents the passed content from being strongly emphasized. If a word appears in your algorithm both as a keyword and as normal text, you may escape the non-keyword usages via this function.
+
+```typst
+no-emph(
+  body
+)
+```
+
+**Parameters:**
+
+*   `body`: `content` &mdash; Content to display without emphasis.
 
 ### `code`
 
@@ -242,7 +262,7 @@ code(
   breakable: false,
   block-align: center,
   main-text-styles: (:),
-  line-number-styles: (:),
+  line-number-styles: (:)
 )
 ```
 

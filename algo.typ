@@ -606,6 +606,17 @@
 }
 
 
+// Prevents internal content from being strongly emphasized.
+//
+// Parameters:
+//   body: Content.
+#let no-emph(body) = {
+  _assert-in-algo("cannot use #no-emph outside an algo element")
+  set strong(delta: 0)
+  body
+}
+
+
 // Adds a comment to a line in an algo body.
 //
 // Parameters:
@@ -622,7 +633,7 @@
       _algo-comment-styles.display(comment-styles => {
         set text(..comment-styles)
         comment-prefix
-        body
+        no-emph(body)
       })
     })
   } else {
