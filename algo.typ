@@ -214,11 +214,8 @@
 //   block-inset: The inset of the current element.
 //   row-gutter: The row-gutter of the current element.
 //   main-text-styles: Dictionary of styling options for the algorithm steps.
-//     Supports any parameter in Typst's native text function.
 //   comment-styles: Dictionary of styling options for comment text.
-//     Supports any parameter in Typst's native text function.
 //   line-number-styles: Dictionary of styling options for the line numbers.
-//     Supports any parameter in Typst's native text function.
 #let _algo-indent-guides(
   indent-guides,
   indent-guides-offset,
@@ -389,15 +386,15 @@
 //   correct indentation, and indent guides.
 //
 // Parameters:
+//   lines: List of algorithm lines from _get-algo-lines().
 //   strong-keywords: Whether to have bold keywords.
 //   keywords: List of terms to receive strong emphasis if
 //     strong-keywords is true.
 //   indent-size: Size of line indentations.
 //   indent-guides: Stroke for indent guides.
 //   indent-guides-offset: Horizontal offset of indent guides.
-//   row-gutter: Space between lines.
 //   inset: Inner padding.
-//   block-align: Alignment of block. Use none for no alignment.
+//   row-gutter: Space between lines.
 //   main-text-styles: Dictionary of styling options for the algorithm steps.
 //   comment-styles: Dictionary of styling options for comment text.
 //   line-number-styles: Dictionary of styling options for the line numbers.
@@ -561,8 +558,8 @@
 
   table(
     columns: num-columns,
-    column-gutter: column-gutter,
     row-gutter: row-gutter,
+    column-gutter: column-gutter,
     align: align-func,
     stroke: none,
     inset: 0pt,
@@ -748,7 +745,6 @@
 // Parameters:
 //   raw-text: Raw text block.
 //   main-text-styles: Dictionary of styling options for the source code.
-//     Supports any parameter in Typst's native text function.
 #let _get-code-lines(
   raw-text,
   main-text-styles,
@@ -942,6 +938,83 @@
 })}
 
 
+// Layouts code content in a table.
+//
+// Parameters:
+//   lines: List of clips of lines from _get-code-lines().
+//   indent-levels: List of indent levels from _get-code-indent-levels().
+//   line-numbers: Whether to have line numbers.
+//   indent-guides: Stroke for indent guides.
+//   indent-guides-offset: Horizontal offset of indent guides.
+//   tab-size: Amount of spaces that should be considered an indent.
+//   row-gutter: Space between lines.
+//   column-gutter: Space between line numbers and text.
+//   inset: Inner padding.
+//   main-text-styles: Dictionary of styling options for the source code.
+//   line-number-styles: Dictionary of styling options for the line numbers.
+#let _build-code-table(
+  lines,
+  indent-levels,
+  line-numbers,
+  indent-guides,
+  indent-guides-offset,
+  tab-size,
+  row-gutter,
+  column-gutter,
+  inset,
+  main-text-styles,
+  line-number-styles,
+) = {
+  let table-data = ()
+
+  for (i, line) in lines.enumerate() {
+    if line-numbers {
+      table-data.push({
+        set text(..line-number-styles)
+        str(i + 1)
+      })
+    }
+
+    let content = {
+      if indent-guides != none {
+        _code-indent-guides(
+          indent-guides,
+          indent-guides-offset,
+          line,
+          i,
+          lines.len(),
+          indent-levels.at(i),
+          tab-size,
+          inset,
+          row-gutter,
+          main-text-styles,
+          line-number-styles
+        )
+      }
+
+      box(line)
+    }
+
+    table-data.push(content)
+  }
+
+  table(
+    columns: if line-numbers {2} else {1},
+    inset: 0pt,
+    stroke: none,
+    fill: none,
+    row-gutter: row-gutter,
+    column-gutter: column-gutter,
+    align: if line-numbers {
+      (x, _) => (right+horizon, left+bottom).at(x)
+    } else {
+      left
+    },
+    ..table-data
+  )
+}
+
+
 // Displays code in a block element.
 //
 // Parameters:
@@ -1017,38 +1090,19 @@
     _get-code-indent-levels(line-strs, tab-size)
   }
 
-  let table-data = ()
-
-  for (i, line) in lines.enumerate() {
-    if line-numbers {
-      table-data.push({
-        set text(..line-number-styles)
-        str(i + 1)
-      })
-    }
-
-    let content = {
-      if indent-guides != none {
-        _code-indent-guides(
-          indent-guides,
-          indent-guides-offset,
-          line,
-          i,
-          lines.len(),
-          indent-levels.at(i),
-          tab-size,
-          inset,
-          row-gutter,
-          main-text-styles,
-          line-number-styles
-        )
-      }
-
-      box(line)
-    }
-
-    table-data.push(content)
-  }
+  let code-table = _build-code-table(
+    lines,
+    indent-levels,
+    line-numbers,
+    indent-guides,
+    indent-guides-offset,
+    tab-size,
+    row-gutter,
+    column-gutter,
+    inset,
+    main-text-styles,
+    line-number-styles,
+  )
 
   // build block
   let code-block = block(
@@ -1060,20 +1114,7 @@
     breakable: breakable
   )[
     #set align(start + top)
-    #table(
-      columns: if line-numbers {2} else {1},
-      inset: 0pt,
-      stroke: none,
-      fill: none,
-      row-gutter: row-gutter,
-      column-gutter: column-gutter,
-      align: if line-numbers {
-        (x, _) => (right+horizon, left+bottom).at(x)
-      } else {
-        left
-      },
-      ..table-data
-    )
+    #code-table
   ]
 
   // display content
