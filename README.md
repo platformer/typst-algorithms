@@ -226,7 +226,9 @@ comment(
 
     NOTE: to make inline comments insensitive to `strong-keywords`, strong emphasis is disabled within them. This can be circumvented via the `text` function:
 
-        `#comment(inline: true)[#text(weight: 700)[...]]`
+    ```typst
+    #comment(inline: true)[#text(weight: 700)[...]]
+    ```
 
 ### `no-emph`
 
