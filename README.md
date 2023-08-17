@@ -180,26 +180,47 @@ algo(
 **Parameters:**
 
 *   `body`: `content` &mdash; Main algorithm content.
+
 *   `header`: `content` &mdash; Algorithm header. If specified, `title` and `parameters` are ignored.
+
 *   `title`: `string` or `content` &mdash; Algorithm title. Ignored if `header` is specified.
+
 *   `Parameters`: `array` &mdash; List of algorithm parameters. Elements can be `string` or `content` values. `string` values will automatically be displayed in math mode. Ignored if `header` is specified.
+
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
+
 *   `strong-keywords`: `boolean` &mdash; Whether to strongly emphasize keywords.
+
 *   `keywords`: `array` &mdash; List of terms to receive strong emphasis. Elements must be `string` values. Ignored if `strong-keywords` is `false`.
+
 *   `comment-prefix`: `content` &mdash; What to prepend comments with.
+
 *   `indent-size`: `length` &mdash; Size of line indentations.
+
 *   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
+
 *   `indent-guides-offset`: `length` &mdash; Horizontal offset of indent guides.
+
 *   `row-gutter`: `length` &mdash; Space between lines.
+
 *   `column-gutter`: `length` &mdash; Space between line numbers, text, and comments.
+
 *   `inset`: `length` &mdash; Size of inner padding.
+
 *   `fill`: `color` &mdash; Fill color.
+
 *   `stroke`: `stroke` &mdash; Stroke for the element's border.
+
 *   `radius`: `length` &mdash; Corner radius.
+
 *   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
+
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `algo` on the page. Using `none` will cause the internal `block` element to be returned as-is.
+
 *   `main-text-styles`: `dictionary` &mdash; Styling options for the main algorithm text. Supports all parameters in Typst's native `text` function.
+
 *   `comment-styles`: `dictionary` &mdash; Styling options for comment text. Supports all parameters in Typst's native `text` function.
+
 *   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
 
 ### `i` and `d`
@@ -220,6 +241,7 @@ comment(
 **Parameters:**
 
 *   `body`: `content` &mdash; Comment content.
+
 *   `inline`: `boolean` &mdash; If true, the comment is displayed in place rather than on the right side.
 
     NOTE: inline comments will respect both `main-text-styles` and `comment-styles`, preferring `comment-styles` when the two conflict.
@@ -271,19 +293,33 @@ code(
 **Parameters:**
 
 *   `body`: `content` &mdash; Main content. Expects `raw` text.
+
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
+
 *   `indent-guides`: `stroke` &mdash; Stroke for indent guides.
+
 *   `indent-guides-offset`: `length` &mdash; Horizontal offset of indent guides.
+
 *   `tab-size`: `integer` &mdash; Amount of spaces that should be considered an indent. If unspecified, the tab size is determined automatically from the first instance of starting whitespace.
+
 *   `row-gutter`: `length` &mdash; Space between lines.
+
 *   `column-gutter`: `length` &mdash; Space between line numbers and text.
+
 *   `inset`: `length` &mdash; Size of inner padding.
+
 *   `fill`: `color` &mdash; Fill color.
+
 *   `stroke`: `stroke` &mdash; Stroke for the element's border.
+
 *   `radius`: `length` &mdash; Corner radius.
+
 *   `breakable`: `boolean` &mdash; Whether the element can break across pages. WARNING: indent guides may look off when broken across pages.
+
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `code` on the page. Using `none` will cause the internal `block` element to be returned as-is.
+
 *   `main-text-styles`: `dictionary` &mdash; Styling options for the main raw text. Supports all parameters in Typst's native `text` function.
+
 *   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
 
 ## Contributing
