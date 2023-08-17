@@ -158,7 +158,7 @@ algo(
   parameters: (),
   line-numbers: true,
   strong-keywords: true,
-  keywords: _algo-default-keywords,
+  keywords: _algo-default-keywords, // see below
   comment-prefix: "// ",
   indent-size: 20pt,
   indent-guides: none,
@@ -192,6 +192,17 @@ algo(
 *   `strong-keywords`: `boolean` &mdash; Whether to strongly emphasize keywords.
 
 *   `keywords`: `array` &mdash; List of terms to receive strong emphasis. Elements must be `string` values. Ignored if `strong-keywords` is `false`.
+
+    The default list of keywords is stored in `_algo-default-keywords`. This list contains the following terms:
+
+    ```
+    ("if", "else", "then", "while", "for",
+    "repeat", "do", "until", ":", "end",
+    "and", "or", "not", "in", "to",
+    "down", "let", "return", "goto")
+    ```
+
+    Note that for each of the above terms, `algo-default-keywords` also contains the uppercase form of the term (e.g. "for" and "For").
 
 *   `comment-prefix`: `content` &mdash; What to prepend comments with.
 
