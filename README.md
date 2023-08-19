@@ -202,7 +202,7 @@ algo(
     "down", "let", "return", "goto")
     ```
 
-    Note that for each of the above terms, `algo-default-keywords` also contains the uppercase form of the term (e.g. "for" and "For").
+    Note that for each of the above terms, `_algo-default-keywords` also contains the uppercase form of the term (e.g. "for" and "For").
 
 *   `comment-prefix`: `content` &mdash; What to prepend comments with.
 
