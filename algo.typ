@@ -599,7 +599,7 @@
   _assert-in-algo("cannot use #d outside an algo element")
 
   _algo-indent-level.display(n => {
-    assert(n - 1 >= 0, message: "algo: dedented too much")
+    _algo-assert(n - 1 >= 0, message: "dedented too much")
   })
 
   _algo-indent-level.update(n => n - 1)
