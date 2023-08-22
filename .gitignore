@@ -12,3 +12,5 @@
 !test
 !test/test.typ
 !test/test.pdf
+!test/assertions
+!test/assertions/*.typ
