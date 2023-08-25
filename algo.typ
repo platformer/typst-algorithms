@@ -1087,23 +1087,26 @@
   main-text-styles: (:),
   line-number-styles: (:),
 ) = {
-  if body == [] or not body.has("children") {
+  let raw-text = if body.func() == raw {
+    body
+  } else if body != [] and body.has("children") {
+    let raw-children = body.children.filter(e => e.func() == raw)
+
+    _algo-assert(
+      raw-children.len() > 0,
+      message: "must provide raw text to code"
+    )
+
+    _algo-assert(
+      raw-children.len() == 1,
+      message: "cannot pass multiple raw text blocks to code"
+    )
+
+    raw-children.first()
+  } else {
     return
   }
 
-  let raw-children = body.children.filter(e => e.func() == raw)
-
-  _algo-assert(
-    raw-children.len() > 0,
-    message: "must provide raw text to code"
-  )
-
-  _algo-assert(
-    raw-children.len() == 1,
-    message: "cannot pass multiple raw text blocks to code"
-  )
-
-  let raw-text = raw-children.first()
   let line-strs = raw-text.text.split("\n")
 
   let lines = _get-code-lines(

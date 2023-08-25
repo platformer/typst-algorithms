@@ -126,16 +126,41 @@
 
 == Empty bodies
 
+#linebreak()
+
 #algo()[]
 
 #code()[]
 
+== `code` with empty raw text
+
+#linebreak()
+
+#code()[#raw("")]
+
 == `code` with empty raw block
 
-#code()[
-  ```
-  ```
-]
+#linebreak()
+
+#code()[#raw("", block: true)]
+
+== `code` with non-sequence raw block
+
+#linebreak()
+
+#code()[```py
+def floyd_warshall(G):
+  # let G be an adjacency matrix
+  dist = G
+  
+  for k in range(len(G)):
+    for i in range(len(G)):
+      for j in range(len(G)):
+        if dist[i][j] > dist[i][k] + dist[k][j]:
+          dist[i][j] = dist[i][k] + dist[k][j]
+  
+  return dist
+```]
 
 == Indent guides with line wrapping
 
