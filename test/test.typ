@@ -825,3 +825,62 @@ def floyd_warshall(G):
     return dist
   ```
 ]
+
+== Broken indent guides with small inset
+
+#table(
+  columns: 2,
+  stroke: none,
+  align: (x, _) => (right, left).at(x),
+  "row-gutter:", "15pt",
+  "inset:", "3pt",
+  "indent-guides:", "1pt + black",
+  "breakable:", "true"
+)
+
+#v(380pt)
+#algo(
+  title: "Floyd-Warshall",
+  parameters: ("V", "E", "w"),
+  row-gutter: 15pt,
+  inset: 3pt,
+  indent-guides: 1pt + black,
+  breakable: true,
+)[
+  Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
+  For $(u,v)$ in $E$:#i\
+    $"dist"[u,v] <- w(u,v)$ #comment[edge weights] #d\
+  For $v$ in $V$:#i\
+    $"dist"[v,v] <- 0$ #comment[base case] #d\
+  \
+  For $k <- 1$ to $|V|$:#i\
+    For $i <- 1$ to $|V|$:#i\
+      For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
+        If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
+          $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
+  \
+  Return $"dist"$
+]
+
+#v(420pt)
+#code(
+  row-gutter: 15pt,
+  inset: 3pt,
+  indent-guides: 1pt + black,
+  breakable: true,
+)[
+  ```py
+  def floyd_warshall(G):
+    # let G be an adjacency matrix
+    dist = G
+    
+    for k in range(len(G)):
+      for i in range(len(G)):
+        for j in range(len(G)):
+          if dist[i][j] > dist[i][k] + dist[k][j]:
+            dist[i][j] = dist[i][k] + dist[k][j]
+    
+    return dist
+  ```
+]
