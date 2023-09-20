@@ -772,63 +772,43 @@
 }
 
 
-// Returns list of content values, where each element is a
-//   boxed clip of a line from the provided raw text
+// Returns tuple of lengths:
+//   - height of text (baseline to cap-height)
+//   - height of ascenders
+//   - height of descenders
 //
 // Parameters:
-//   raw-text: Raw text block.
 //   main-text-styles: Dictionary of styling options for the source code.
-#let _get-code-lines(
-  raw-text,
+//   styles: styles value obtained from call to style
+#let _get-code-text-height(
   main-text-styles,
+  styles
 ) = {
-  let line-spacing = 50pt
-
-  let styled-raw-text = {
-    set text(..main-text-styles)
-    set par(leading: line-spacing)
-    raw-text
+  let styled-ascii = {
+    show raw: set text(..main-text-styles)
+    raw(_ascii)
   }
 
-  let num-lines = raw-text.text.split("\n").len()
+  let text-height = measure({
+    show raw: set text(top-edge: "cap-height", bottom-edge: "baseline")
+    styled-ascii
+  }, styles).height
 
-  let lines = for i in range(num-lines) {
-    (style(styles => {
-      let text-height = measure(
-        {
-          set text(..main-text-styles)
-          raw(_ascii)
-        },
-        styles
-      ).height
+  let text-and-ascender-height = measure({
+    show raw: set text(top-edge: "ascender", bottom-edge: "baseline")
+    styled-ascii
+  }, styles).height
 
-      let text-and-descender-height = measure(
-        {
-          set text(..main-text-styles)
-          set text(bottom-edge: "descender")
-          raw(_ascii)
-        },
-        styles
-      ).height
+  let text-and-descender-height = measure({
+    show raw: set text(top-edge: "cap-height", bottom-edge: "descender")
+    styled-ascii
+  }, styles).height
 
-      let descender-length = text-and-descender-height - text-height
-
-      set align(start + top)
-      move(
-        dy: descender-length * 0.5,
-        box(
-          height: text-and-descender-height,
-          clip: true,
-          move(
-            dy: -((text-height + line-spacing) * i),
-            styled-raw-text
-          )
-        )
-      )
-    }), )
-  }
-
-  return lines
+  return (
+    text-height,
+    text-and-ascender-height - text-height,
+    text-and-descender-height - text-height,
+  )
 }
 
 
@@ -842,8 +822,7 @@
 //     provided raw text.
 #let _get-code-tab-size(line-strs) = {
   for line in line-strs {
-    let starting-whitespace = line.replace(regex("\t"), "")
-                                  .find(regex("^ +"))
+    let starting-whitespace = line.replace(regex("\t"), "").find(regex("^ +"))
 
     if starting-whitespace != none {
       return starting-whitespace.len()
@@ -864,8 +843,7 @@
 //   tab-size: tab-size used by the given code
 #let _get-code-indent-levels(line-strs, tab-size) = {
   line-strs.map(line => {
-    let starting-whitespace = line.replace(regex("\t"), "")
-                                  .find(regex("^ +"))
+    let starting-whitespace = line.replace(regex("\t"), "").find(regex("^ +"))
 
     if starting-whitespace == none {
       0
@@ -873,6 +851,113 @@
       calc.floor(starting-whitespace.len() / tab-size)
     }
   })
+}
+
+
+// Returns list of tuples, where the ith tuple contains:
+//   - a list of boxed clips of each line-wrapped component of the ith line
+//   - an integer indicating the indent level of the ith line
+//
+// Parameters:
+//   raw-text: Raw text block.
+//   line-numbers: Whether there are line numbers.
+//   column-gutter: Space between line numbers and text.
+//   inset: Inner padding of containing block.
+//   main-text-styles: Dictionary of styling options for the source code.
+//   line-number-styles: Dictionary of styling options for the line numbers.
+//   text-height: Height of raw text, baseline to cap-height.
+//   ascender-height: Height of raw text ascenders.
+//   descender-height: Height of raw text descenders.
+//   indent-levels: List of integers indicating indent levels of each line.
+//   container-size: Size of the outer container.
+//   styles: Active styles.
+#let _get-code-line-data(
+  raw-text,
+  line-numbers,
+  column-gutter,
+  inset,
+  main-text-styles,
+  line-number-styles,
+  text-height,
+  ascender-height,
+  descender-height,
+  indent-levels,
+  container-size,
+  styles
+) = {
+  let line-spacing = 100pt
+  let line-strs = raw-text.text.split("\n")
+  let num-lines = line-strs.len()
+  let container-width = container-size.width
+
+  let line-number-col-width = measure({
+    set text(..line-number-styles)
+    "0" * (calc.floor(calc.log(num-lines)) + 1)
+  }, styles).width
+
+  let max-text-area-width = (
+    container-size.width - inset * 2 - if line-numbers {
+      (column-gutter + line-number-col-width)
+    } else {
+      0pt
+    }
+  )
+
+  let max-text-width = measure({
+    show raw: set text(..main-text-styles)
+    raw-text
+  }, styles).width
+
+  let real-text-width = calc.min(max-text-width, max-text-area-width)
+
+  let styled-raw-text = {
+    show raw: set text(..main-text-styles)
+    set par(leading: line-spacing)
+    block(width: real-text-width, raw-text)
+  }
+
+  let line-data = ()
+  let line-count = 0
+
+  for i in range(num-lines) {
+    let indent-level = indent-levels.at(i)
+
+    let line-width = measure({
+      show raw: set text(..main-text-styles)
+      raw(line-strs.at(i))
+    }, styles).width
+
+    let line-wrapped-components = ()
+
+    for j in range(calc.max(1, calc.ceil(line-width / real-text-width))) {
+      let is-wrapped = j > 0
+      let real-indent-level = if is-wrapped {0} else {indent-level}
+
+      let line-clip = {
+        set align(start + top)
+
+        box(move(
+          dy: descender-height * 0.5,
+          box(
+            width: real-text-width,
+            height: text-height + ascender-height + descender-height,
+            clip: true,
+            move(
+              dy: -((text-height+line-spacing) * line-count) + ascender-height,
+              styled-raw-text
+            )
+          )
+        ))
+      }
+
+      line-wrapped-components.push(line-clip)
+      line-count += 1
+    }
+
+    line-data.push((line-wrapped-components, indent-level))
+  }
+
+  return line-data
 }
 
 
@@ -907,51 +992,32 @@
   main-text-styles,
   line-number-styles,
 ) = { style(styles => {
-  // heuristically determine the height of the line
+  // heuristically determine the height of the row
   let row-height = calc.max(
     // height of content
-    measure(
-      content,
-      styles
-    ).height,
+    measure(content, styles).height,
 
     // height of raw text
-    measure(
-      {
-        set text(..main-text-styles)
-        raw(_ascii)
-      },
-      styles
-    ).height,
+    measure({
+      show raw: set text(..main-text-styles)
+      raw(_ascii)
+    }, styles).height,
 
     // height of line numbers
-    measure(
-      {
-        set text(..line-number-styles)
-        _numerals
-      },
-      styles
-    ).height
+    measure({
+      set text(..line-number-styles)
+      _numerals
+    }, styles).height
   )
 
-  let indent-size = measure(
-    {
-      set text(..main-text-styles)
-      raw("a" * tab-size)
-    },
-    styles
-  ).width
+  let indent-size = measure({
+    show raw: set text(..main-text-styles)
+    raw("a" * tab-size)
+  }, styles).width
 
   // converting input parameters to absolute lengths
-  let block-inset-abs = measure(
-    rect(width: block-inset),
-    styles
-  ).width
-
-  let row-gutter-abs = measure(
-    rect(width: row-gutter),
-    styles
-  ).width
+  let block-inset-abs = measure(rect(width: block-inset), styles).width
+  let row-gutter-abs = measure(rect(width: row-gutter), styles).width
 
   let is-first-line = line-index == 0
   let is-last-line = line-index == num-lines - 1
@@ -974,7 +1040,7 @@
 // Layouts code content in a table.
 //
 // Parameters:
-//   lines: List of clips of lines from _get-code-lines().
+//   line-data: Data received from _get-code-line-data().
 //   indent-levels: List of indent levels from _get-code-indent-levels().
 //   line-numbers: Whether to have line numbers.
 //   indent-guides: Stroke for indent guides.
@@ -986,7 +1052,7 @@
 //   main-text-styles: Dictionary of styling options for the source code.
 //   line-number-styles: Dictionary of styling options for the line numbers.
 #let _build-code-table(
-  lines,
+  line-data,
   indent-levels,
   line-numbers,
   indent-guides,
@@ -998,14 +1064,35 @@
   main-text-styles,
   line-number-styles,
 ) = {
+  let flattened-line-data = line-data.fold((), (acc, e) => {
+    let line-wrapped-components = e.at(0)
+    let indent-level = e.at(1)
+
+    for (i, line-clip) in line-wrapped-components.enumerate() {
+      let is-wrapped = i > 0
+      let real-indent-level = if is-wrapped {0} else {indent-level}
+      acc.push((line-clip, is-wrapped, real-indent-level))
+    }
+
+    acc
+  })
+
   let table-data = ()
 
-  for (i, line) in lines.enumerate() {
+  for (i, info) in flattened-line-data.enumerate() {
+    let line-clip = info.at(0)
+    let is-wrapped = info.at(1)
+    let indent-level = info.at(2)
+
     if line-numbers {
-      table-data.push({
-        set text(..line-number-styles)
-        str(i + 1)
-      })
+      if is-wrapped {
+        table-data.push([])
+      } else {
+        table-data.push({
+          set text(..line-number-styles)
+          str(i + 1)
+        })
+      }
     }
 
     let content = {
@@ -1013,10 +1100,10 @@
         _code-indent-guides(
           indent-guides,
           indent-guides-offset,
-          line,
+          line-clip,
           i,
-          lines.len(),
-          indent-levels.at(i),
+          flattened-line-data.len(),
+          indent-level,
           tab-size,
           inset,
           row-gutter,
@@ -1025,7 +1112,7 @@
         )
       }
 
-      box(line)
+      box(line-clip)
     }
 
     table-data.push(content)
@@ -1086,7 +1173,7 @@
   block-align: center,
   main-text-styles: (:),
   line-number-styles: (:),
-) = {
+) = { layout(size => style(styles => {
   let raw-text = if body.func() == raw {
     body
   } else if body != [] and body.has("children") {
@@ -1107,33 +1194,55 @@
     return
   }
 
+  if raw-text.text == "" {
+    return
+  }
+
   let line-strs = raw-text.text.split("\n")
 
-  let lines = _get-code-lines(
-    raw-text,
-    main-text-styles
+  let (text-height, asc-height, desc-height) = _get-code-text-height(
+    main-text-styles,
+    styles
   )
 
-  if tab-size == auto {
-    tab-size = _get-code-tab-size(line-strs)
+  let real-row-gutter = calc.max(0pt, row-gutter - asc-height - desc-height)
+
+  let real-tab-size = if tab-size == auto {
+    _get-code-tab-size(line-strs)
+  } else {
+    tab-size
   }
 
   // no indents exist, so ignore indent-guides
-  let indent-levels = if tab-size == -1 {
-    indent-guides = none
-    none
+  let (real-indent-guides, indent-levels) = if real-tab-size == -1 {
+    (none, (0,) * line-strs.len())
   } else {
-    _get-code-indent-levels(line-strs, tab-size)
+    (indent-guides, _get-code-indent-levels(line-strs, real-tab-size))
   }
 
+  let line-data = _get-code-line-data(
+    raw-text,
+    line-numbers,
+    column-gutter,
+    inset,
+    main-text-styles,
+    line-number-styles,
+    text-height,
+    asc-height,
+    desc-height,
+    indent-levels,
+    size,
+    styles,
+  )
+
   let code-table = _build-code-table(
-    lines,
+    line-data,
     indent-levels,
     line-numbers,
-    indent-guides,
+    real-indent-guides,
     indent-guides-offset,
-    tab-size,
-    row-gutter,
+    real-tab-size,
+    real-row-gutter,
     column-gutter,
     inset,
     main-text-styles,
@@ -1161,4 +1270,4 @@
   } else {
     code-block
   }
-}
+}))}

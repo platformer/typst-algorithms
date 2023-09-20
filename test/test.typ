@@ -806,7 +806,7 @@ def floyd_warshall(G):
   Return $"dist"$
 ]
 
-#v(440pt)
+#v(460pt)
 #code(
   indent-guides: 1pt + black,
   breakable: true,
