@@ -23,7 +23,7 @@
 //   line indexes (as strings) to the comment appearing on that line
 #let _algo-comment-dicts = state("_algo-comment-dicts", (:))
 
-// list of default keywords that will be highlighted by strong-keywords
+// list of default keywords that will be highlighted by keyword-styles
 #let _algo-default-keywords = (
   // branch delimiters
   "if",
@@ -393,9 +393,8 @@
 //
 // Parameters:
 //   lines: List of algorithm lines from _get-algo-lines().
-//   strong-keywords: Whether to have bold keywords.
-//   keywords: List of terms to receive strong emphasis if
-//     strong-keywords is true.
+//   keyword-styles: How to style keywords.
+//   keywords: List of terms.
 //   indent-size: Size of line indentations.
 //   indent-guides: Stroke for indent guides.
 //   indent-guides-offset: Horizontal offset of indent guides.
@@ -406,7 +405,7 @@
 //   line-number-styles: Dictionary of styling options for the line numbers.
 #let _build-formatted-algo-lines(
   lines,
-  strong-keywords,
+  keyword-styles,
   keywords,
   indent-size,
   indent-guides,
@@ -431,12 +430,10 @@
   for (i, line) in lines.enumerate() {
     let formatted-line = {
       // bold keywords
-      show regex("\S+"): it => {
-        if strong-keywords and it in keywords {
-          strong(it)
-        } else {
-          it
-        }
+      show regex("\S+"): it => if it in keywords {
+        keyword-styles(it)
+      } else {
+        it
       }
 
       _algo-indent-level.display(indent-level => {
@@ -662,9 +659,8 @@
 //   title: Algorithm title. Ignored if header is not none.
 //   Parameters: Array of parameters. Ignored if header is not none.
 //   line-numbers: Whether to have line numbers.
-//   strong-keywords: Whether to have bold keywords.
-//   keywords: List of terms to receive strong emphasis if
-//     strong-keywords is true.
+//   keyword-styles: How to style keywords. Use none
+//   keywords: List of terms.
 //   comment-prefix: Content to prepend comments with.
 //   indent-size: Size of line indentations.
 //   indent-guides: Stroke for indent guides.
@@ -690,7 +686,7 @@
   title: none,
   parameters: (),
   line-numbers: true,
-  strong-keywords: true,
+  keyword-styles: strong,
   keywords: _algo-default-keywords,
   comment-prefix: "// ",
   indent-size: 20pt,
@@ -720,7 +716,7 @@
   let lines = _get-algo-lines(body)
   let formatted-lines = _build-formatted-algo-lines(
     lines,
-    strong-keywords,
+    if keyword-styles == false { x => x } else { keyword-styles },
     keywords,
     indent-size,
     indent-guides,

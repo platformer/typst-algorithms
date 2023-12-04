@@ -1,6 +1,6 @@
 // check out the README to see all the options
 // for algo and code
-#import "@preview/algo:0.3.1": algo, i, d, comment, code
+#import "../algo.typ": algo, i, d, comment, code
 
 
 #algo(
@@ -20,7 +20,7 @@
 
 #algo(
   line-numbers: false,
-  strong-keywords: false
+  keyword-styles: false
 )[
   if $n < 0$:#i\
     return null#d\
@@ -56,6 +56,7 @@
   inset: 5pt,
   stroke: 2pt + black,
   fill: none,
+  keyword-styles: x => text(blue, x)
 )[
   if $n < 0$:#i\
     return null#d\
