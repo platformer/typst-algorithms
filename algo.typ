@@ -417,19 +417,21 @@
   comment-styles,
   line-number-styles
 ) = {
+  // regex for detecting keywords
+  let keyword-regex = "\b{start}(?:"
+
+  for kw in keywords {
+    keyword-regex += kw.trim() + "|"
+  }
+
+  keyword-regex = keyword-regex.replace(regex("\|$"), "")
+  keyword-regex += ")\b{end}"
+
   let formatted-lines = ()
 
   for (i, line) in lines.enumerate() {
     let formatted-line = {
       // bold keywords
-      let keyword-regex = "\b{start}(?:"
-
-      for kw in keywords {
-        keyword-regex += kw.trim() + "|"
-      }
-
-      keyword-regex = keyword-regex.slice(0, -1) + ")\b{end}"
-
       show regex(keyword-regex): it => {
         if strong-keywords {
           strong(it)
