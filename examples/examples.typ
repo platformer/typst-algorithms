@@ -64,8 +64,11 @@
     return $n$#d\
   \
   let $x <- 0$\
+  #comment(inline: true)[for instance]\
+  #comment[for instance]\
+  #box(stroke: black)[for]\
   let $y <- 1$\
-  for $i <- 2$ to $n-1$:#i #comment[so dynamic!]\
+  for $i <- 2 "for"$ to $n-1$:#i #comment[so for dynamic!]\
     let $z <- x+y$\
     $x <- y$\
     $y <- z$#d\

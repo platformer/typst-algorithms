@@ -321,17 +321,13 @@
   // i.e. just combine everything that definitely aren't on separate lines
   let text-and-whitespaces = {
     let joined-children = ()
-    let temp = []
+    let temp = none
 
     for child in body.children {
-      if (
-        child == [ ]
-        or child == linebreak()
-        or child == parbreak()
-      ){
-        if temp != [] {
+      if child == [ ] or child == linebreak() or child == parbreak() {
+        if temp != none {
           joined-children.push(temp)
-          temp = []
+          temp = none
         }
 
         joined-children.push(child)
@@ -340,7 +336,7 @@
       }
     }
 
-    if temp != [] {
+    if temp != none {
       joined-children.push(temp)
     }
 
