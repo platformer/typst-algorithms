@@ -312,7 +312,7 @@
 //
 // Parameters:
 //   body: Algorithm content.
-#let _get-algo-lines(body) = {
+#let _get-algo-lines(body, keywords, keyword-styles) = {
   if not body.has("children") {
     return ()
   }
@@ -331,6 +331,12 @@
         }
 
         joined-children.push(child)
+      } else if child.func() == text {
+        temp += child.text.split().map(
+          word => if word in keywords {
+            keyword-styles(word)
+          } else { word }
+        ).join([ ])
       } else {
         temp += child
       }
@@ -352,20 +358,20 @@
   // make final list of empty and non-empty lines
   let lines = {
     let joined-lines = ()
-    let line-parts = []
+    let line-parts = none
     let num-linebreaks = 0
 
     for elem in text-and-breaks {
       if elem == linebreak() {
-        if line-parts != [] {
+        if line-parts != none {
           joined-lines.push(line-parts)
-          line-parts = []
+          line-parts = none
         }
 
         num-linebreaks += 1
 
         if num-linebreaks > 1 {
-          joined-lines.push([])
+          joined-lines.push(none)
         }
       } else {
         line-parts += [#elem ]
@@ -373,7 +379,7 @@
       }
     }
 
-    if line-parts != [] {
+    if line-parts != none {
       joined-lines.push(line-parts)
     }
 
@@ -401,8 +407,6 @@
 //   line-number-styles: Dictionary of styling options for the line numbers.
 #let _build-formatted-algo-lines(
   lines,
-  keyword-styles,
-  keywords,
   indent-size,
   indent-guides,
   indent-guides-offset,
@@ -412,26 +416,10 @@
   comment-styles,
   line-number-styles
 ) = {
-  // convert keywords to content values
-  keywords = keywords.map(e => {
-    if type(e) == "string" {
-      [#e]
-    } else {
-      e
-    }
-  })
-
   let formatted-lines = ()
 
   for (i, line) in lines.enumerate() {
     let formatted-line = {
-      // bold keywords
-      show regex("\S+"): it => if it in keywords {
-        keyword-styles(it)
-      } else {
-        it
-      }
-
       _algo-indent-level.display(indent-level => {
         if indent-guides != none {
           _algo-indent-guides(
@@ -544,7 +532,7 @@
 
     if has-comments {
       if comment-contents.at(i) == none {
-        table-data.push([])
+        table-data.push(none)
       } else {
         table-data.push({
           set text(..comment-styles)
@@ -709,11 +697,13 @@
 
   let algo-header = _build-algo-header(header, title, parameters)
 
-  let lines = _get-algo-lines(body)
+  let lines = _get-algo-lines(
+    body,
+    keywords,
+    if keyword-styles == false { x => x } else { keyword-styles }
+  )
   let formatted-lines = _build-formatted-algo-lines(
     lines,
-    if keyword-styles == false { x => x } else { keyword-styles },
-    keywords,
     indent-size,
     indent-guides,
     indent-guides-offset,
@@ -1078,7 +1068,7 @@
 
     if line-numbers {
       if is-wrapped {
-        table-data.push([])
+        table-data.push(none)
       } else {
         table-data.push({
           set text(..line-number-styles)
