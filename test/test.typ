@@ -327,13 +327,13 @@ def floyd_warshall(G):
   columns: 2,
   stroke: none,
   align: (x, _) => (right, left).at(x),
-  "keywords:",  "(\"in\", \"to\")"
+  "keywords:",  "(\"in\", \"to\", \"hello world\")"
 )
 
 #algo(
   title: "Floyd-Warshall",
   parameters: ("V", "E", "w"),
-  keywords: ("in", "to")
+  keywords: ("in", "to", "hello world")
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
   For $(u,v)$ in $E$:#i\
@@ -348,6 +348,7 @@ def floyd_warshall(G):
         If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
           $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
   \
+  blah blah hello world blah blah\
   Return $"dist"$
 ]
 

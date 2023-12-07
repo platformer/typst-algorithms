@@ -417,22 +417,21 @@
   comment-styles,
   line-number-styles
 ) = {
-  // convert keywords to content values
-  keywords = keywords.map(e => {
-    if type(e) == "string" {
-      [#e]
-    } else {
-      e
-    }
-  })
-
   let formatted-lines = ()
 
   for (i, line) in lines.enumerate() {
     let formatted-line = {
       // bold keywords
-      show regex("\S+"): it => {
-        if strong-keywords and it in keywords {
+      let keyword-regex = "\b{start}(?:"
+
+      for kw in keywords {
+        keyword-regex += kw.trim() + "|"
+      }
+
+      keyword-regex = keyword-regex.slice(0, -1) + ")\b{end}"
+
+      show regex(keyword-regex): it => {
+        if strong-keywords {
           strong(it)
         } else {
           it
