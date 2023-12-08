@@ -539,16 +539,16 @@ def floyd_warshall(G):
   columns: 2,
   stroke: none,
   align: (x, _) => (right, left).at(x),
-  "main-text-styles:", "(fill: green)",
-  "line-number-styles:", "(fill: red)",
+  "main-text-styles:", "x => text(fill: green)[#x]",
+  "line-number-styles:", "x => text(fill: red)[#x]",
   "comment-styles:", "x => text(fill: blue, x)   (algo only)"
 )
 
 #algo(
   title: "Floyd-Warshall",
   parameters: ("V", "E", "w"),
-  main-text-styles: (fill: green),
-  line-number-styles: (fill: red),
+  main-text-styles: x => text(fill: green)[#x],
+  line-number-styles: x => text(fill: red)[#x],
   comment-styles: x => text(fill: blue, x)
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
@@ -568,8 +568,8 @@ def floyd_warshall(G):
 ]
 
 #code(
-  main-text-styles: (fill: green),
-  line-number-styles: (fill: red)
+  main-text-styles: x => text(fill: green)[#x],
+  line-number-styles: x => text(fill: red)[#x]
 )[
   ```py
   def floyd_warshall(G):
@@ -593,14 +593,14 @@ def floyd_warshall(G):
   stroke: none,
   align: (x, _) => (right, left).at(x),
   "indent-guides:", "1pt + black",
-  "main-text-styles:", "(size: 15pt)"
+  "main-text-styles:", "x => text(size: 15pt)[#x]"
 )
 
 #algo(
   title: "Floyd-Warshall",
   parameters: ("V", "E", "w"),
   indent-guides: 1pt + black,
-  main-text-styles: (size: 15pt),
+  main-text-styles: x => text(size: 15pt)[#x],
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
   For $(u,v)$ in $E$:#i\
@@ -620,7 +620,7 @@ def floyd_warshall(G):
 
 #code(
   indent-guides: 1pt + black,
-  main-text-styles: (size: 15pt)
+  main-text-styles: x => text(size: 15pt)[#x]
 )[
   ```py
   def floyd_warshall(G):
@@ -644,14 +644,14 @@ def floyd_warshall(G):
   stroke: none,
   align: (x, _) => (right, left).at(x),
   "indent-guides:", "1pt + black",
-  "line-number-styles:", "(size: 15pt)"
+  "line-number-styles:", "x => (size: 15pt)[#x]"
 )
 
 #algo(
   title: "Floyd-Warshall",
   parameters: ("V", "E", "w"),
   indent-guides: 1pt + black,
-  line-number-styles: (size: 15pt),
+  line-number-styles: x => text(size: 15pt)[#x],
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
   For $(u,v)$ in $E$:#i\
@@ -671,7 +671,7 @@ def floyd_warshall(G):
 
 #code(
   indent-guides: 1pt + black,
-  line-number-styles: (size: 15pt)
+  line-number-styles: x => text(size: 15pt)[#x]
 )[
   ```py
   def floyd_warshall(G):

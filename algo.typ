@@ -246,11 +246,9 @@
   let row-height = calc.max(
     // height of main content
     measure(
-      {
-        set text(..main-text-styles)
-        _alphanumerics
-        content
-      },
+      main-text-styles(
+        _alphanumerics + content
+      ),
       styles
     ).height,
 
@@ -262,10 +260,7 @@
 
     // height of line numbers
     measure(
-      {
-        set text(..line-number-styles)
-        _numerals
-      },
+      line-number-styles(_numerals),
       styles
     ).height
   )
@@ -532,16 +527,12 @@
     if line-numbers {
       let line-number = i + 1
 
-      table-data.push({
-        set text(..line-number-styles)
-        str(line-number)
-      })
+      table-data.push(line-number-styles(str(line-number)))
     }
 
-    table-data.push({
-      set text(..main-text-styles)
-      line
-    })
+    table-data.push(
+      main-text-styles(line)
+    )
 
     if has-comments {
       if comment-contents.at(i) == none {
@@ -640,6 +631,8 @@
   }
 }
 
+// Returns identity function aka no behaviour if x is none and returns x otherwise
+#let _none_to_nobehaviour(x) = if x == none { x => x } else { x }
 
 // Displays an algorithm in a block element.
 //
@@ -690,19 +683,23 @@
   radius: 0pt,
   breakable: false,
   block-align: center,
-  main-text-styles: (:),
-  comment-styles: (x => text(fill: rgb(45%, 45%, 45%))[#x]),
-  line-number-styles: (:),
+  main-text-styles: x => x,
+  comment-styles: x => text(fill: rgb(45%, 45%, 45%))[#x],
+  line-number-styles: x => x,
 ) = {
+  // change nones to no behaviour
+  let keyword-styles     = _none_to_nobehaviour(keyword-styles)
+  let main-text-styles   = _none_to_nobehaviour(main-text-styles)
+  let comment-styles     = _none_to_nobehaviour(comment-styles)
+  let line-number-styles = _none_to_nobehaviour(line-number-styles)
+
   counter(_algo-id-ckey).step()
   counter(_algo-line-ckey).update(0)
   _algo-comment-prefix.update(comment-prefix)
   // to update the state, we have to pass a function returning a function
   // for typst to understand it not as a function argument
   // we hence use a constant function returning our style function
-  _algo-comment-styles.update(
-    if comment-styles == none { x => x } else { fn => comment-styles }
-  )
+  _algo-comment-styles.update(fn => comment-styles)
   _algo-indent-level.update(0)
   _algo-in-algo-context.update(true)
 
@@ -711,7 +708,7 @@
   let lines = _get-algo-lines(
     body,
     keywords,
-    if keyword-styles == none { x => x } else { keyword-styles }
+    keyword-styles
   )
   let formatted-lines = _build-formatted-algo-lines(
     lines,
@@ -778,7 +775,7 @@
   styles
 ) = {
   let styled-ascii = {
-    show raw: set text(..main-text-styles)
+    show raw: main-text-styles
     raw(_ascii)
   }
 
@@ -883,10 +880,12 @@
   let num-lines = line-strs.len()
   let container-width = container-size.width
 
-  let line-number-col-width = measure({
-    set text(..line-number-styles)
-    "0" * (calc.floor(calc.log(num-lines)) + 1)
-  }, styles).width
+  let line-number-col-width = measure(
+    line-number-styles(
+      "0" * (calc.floor(calc.log(num-lines)) + 1)
+    ),
+    styles
+  ).width
 
   let max-text-area-width = (
     container-size.width - inset * 2 - if line-numbers {
@@ -897,14 +896,14 @@
   )
 
   let max-text-width = measure({
-    show raw: set text(..main-text-styles)
+    show raw: main-text-styles
     raw-text
   }, styles).width
 
   let real-text-width = calc.min(max-text-width, max-text-area-width)
 
   let styled-raw-text = {
-    show raw: set text(..main-text-styles)
+    show raw: main-text-styles
     set par(leading: line-spacing)
     block(width: real-text-width, raw-text)
   }
@@ -916,7 +915,7 @@
     let indent-level = indent-levels.at(i)
 
     let line-width = measure({
-      show raw: set text(..main-text-styles)
+      show raw: main-text-styles
       raw(line-strs.at(i))
     }, styles).width
 
@@ -992,19 +991,21 @@
 
     // height of raw text
     measure({
-      show raw: set text(..main-text-styles)
+      show raw: main-text-styles
       raw(_ascii)
     }, styles).height,
 
     // height of line numbers
-    measure({
-      set text(..line-number-styles)
-      _numerals
-    }, styles).height
+    measure(
+      line-number-styles(
+        _numerals
+      ),
+      styles
+    ).height
   )
 
   let indent-size = measure({
-    show raw: set text(..main-text-styles)
+    show raw: main-text-styles
     raw("a" * tab-size)
   }, styles).width
 
@@ -1081,10 +1082,9 @@
       if is-wrapped {
         table-data.push(none)
       } else {
-        table-data.push({
-          set text(..line-number-styles)
-          str(i + 1)
-        })
+        table-data.push(
+          line-number-styles(str(i + 1))
+        )
       }
     }
 
@@ -1164,9 +1164,14 @@
   radius: 0pt,
   breakable: false,
   block-align: center,
-  main-text-styles: (:),
-  line-number-styles: (:),
-) = { layout(size => style(styles => {
+  main-text-styles: x => x,
+  line-number-styles: x => x,
+) = {
+  // change nones to no behaviour
+  let main-text-styles = _none_to_nobehaviour(main-text-styles)
+  let line-number-styles = _none_to_nobehaviour(line-number-styles)
+  
+  layout(size => style(styles => {
   let raw-text = if body.func() == raw {
     body
   } else if body != [] and body.has("children") {
