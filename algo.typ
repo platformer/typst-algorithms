@@ -700,7 +700,9 @@
   // to update the state, we have to pass a function returning a function
   // for typst to understand it not as a function argument
   // we hence use a constant function returning our style function
-  _algo-comment-styles.update(fn => comment-styles)
+  _algo-comment-styles.update(
+    if comment-styles == none { x => x } else { fn => comment-styles }
+  )
   _algo-indent-level.update(0)
   _algo-in-algo-context.update(true)
 
