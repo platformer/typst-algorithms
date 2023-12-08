@@ -48,7 +48,7 @@
   ],
   parameters: ([#math.italic("n")],),
   comment-prefix: [#sym.triangle.stroked.r ],
-  comment-styles: (fill: rgb(100%, 0%, 0%)),
+  comment-styles: x => text(fill: rgb(100%, 0%, 0%), x),
   indent-size: 15pt,
   indent-guides: 1pt + gray,
   row-gutter: 5pt,

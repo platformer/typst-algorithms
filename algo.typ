@@ -7,7 +7,7 @@
 #let _algo-comment-prefix = state("_algo-comment-prefix", [])
 
 // state value for storing current comment-styles passed to algo
-#let _algo-comment-styles = state("_algo-comment-styles", (:))
+#let _algo-comment-styles = state("_algo-comment-styles", x => [#x])
 
 // counter to track the number of lines in an algo element
 #let _algo-line-ckey = "_algo-line"
@@ -256,10 +256,7 @@
 
     // height of comment
     measure(
-      {
-        set text(..comment-styles)
-        comment-content
-      },
+      comment-styles(comment-content),
       styles
     ).height,
 
@@ -550,11 +547,9 @@
       if comment-contents.at(i) == none {
         table-data.push(none)
       } else {
-        table-data.push({
-          set text(..comment-styles)
-          comment-prefix
-          comment-contents.at(i)
-        })
+        table-data.push(comment-styles(
+          comment-prefix + comment-contents.at(i)
+        ))
       }
     }
   }
@@ -624,11 +619,9 @@
 
   if inline {
     _algo-comment-prefix.display(comment-prefix => {
-      _algo-comment-styles.display(comment-styles => {
-        set text(..comment-styles)
-        comment-prefix
-        no-emph(body)
-      })
+      _algo-comment-styles.display(comment-styles => comment-styles(
+        comment-prefix + body
+      ))
     })
   } else {
     locate(loc => {
@@ -698,13 +691,16 @@
   breakable: false,
   block-align: center,
   main-text-styles: (:),
-  comment-styles: ("fill": rgb(45%, 45%, 45%)),
+  comment-styles: (x => text(fill: rgb(45%, 45%, 45%))[#x]),
   line-number-styles: (:),
 ) = {
   counter(_algo-id-ckey).step()
   counter(_algo-line-ckey).update(0)
   _algo-comment-prefix.update(comment-prefix)
-  _algo-comment-styles.update(comment-styles)
+  // to update the state, we have to pass a function returning a function
+  // for typst to understand it not as a function argument
+  // we hence use a constant function returning our style function
+  _algo-comment-styles.update(fn => comment-styles)
   _algo-indent-level.update(0)
   _algo-in-algo-context.update(true)
 

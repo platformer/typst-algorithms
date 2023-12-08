@@ -297,13 +297,13 @@ def floyd_warshall(G):
   columns: 2,
   stroke: none,
   align: (x, _) => (right, left).at(x),
-  "strong-keywords:", "false"
+  "keyword-styles:", "none"
 )
 
 #algo(
   title: "Floyd-Warshall",
   parameters: ("V", "E", "w"),
-  strong-keywords: false,
+  keyword-styles: none,
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
   For $(u,v)$ in $E$:#i\
@@ -541,7 +541,7 @@ def floyd_warshall(G):
   align: (x, _) => (right, left).at(x),
   "main-text-styles:", "(fill: green)",
   "line-number-styles:", "(fill: red)",
-  "comment-styles:", "(fill: blue)   (algo only)"
+  "comment-styles:", "x => text(fill: blue, x)   (algo only)"
 )
 
 #algo(
@@ -549,7 +549,7 @@ def floyd_warshall(G):
   parameters: ("V", "E", "w"),
   main-text-styles: (fill: green),
   line-number-styles: (fill: red),
-  comment-styles: (fill: blue)
+  comment-styles: x => text(fill: blue, x)
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
   For $(u,v)$ in $E$:#i\
@@ -695,14 +695,14 @@ def floyd_warshall(G):
   stroke: none,
   align: (x, _) => (right, left).at(x),
   "indent-guides:", "1pt + black",
-  "comment-styles:", "(size: 15pt)"
+  "comment-styles:", "x => text(size: 15pt, x)"
 )
 
 #algo(
   title: "Floyd-Warshall",
   parameters: ("V", "E", "w"),
   indent-guides: 1pt + black,
-  comment-styles: (size: 15pt),
+  comment-styles: x => text(size: 15pt, x),
 )[
   Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
   For $(u,v)$ in $E$:#i\
