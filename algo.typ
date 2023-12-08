@@ -306,16 +306,37 @@
   )
 }))}
 
+// Returns the regex for the keyword show rule, using one regex for all together
+//
+// Parameters:
+//   keywords: List of terms
+#let _compute-keyword-regex(keywords) = {
+  let keywords = keywords.map(kw => kw.trim())
+
+  let word-keywords = keywords.filter(kw => kw.match(regex("[^\w ]")) == none).join("|")
+  
+  let nonword-keywords = keywords.filter(kw => kw.match(regex("[^\w ]")) != none)
+  let nonword-keywords = if nonword-keywords != () { "|" + nonword-keywords.join("|") }
+  
+  let keyword-regex = "\b{start}(?:" + word-keywords + ")\b{end}" + nonword-keywords
+  
+  regex(keyword-regex)
+}
 
 // Returns list of content values, where each element is
 //   a line from the algo body
 //
 // Parameters:
 //   body: Algorithm content.
+//   keywords: List of terms.
+//   keyword-styles: Method to style keywords.
 #let _get-algo-lines(body, keywords, keyword-styles) = {
   if not body.has("children") {
     return ()
   }
+
+  // compute a regex expr for all keywords alltogether
+  let kw-regex = _compute-keyword-regex(keywords)
 
   // concatenate consecutive non-whitespace elements
   // i.e. just combine everything that definitely aren't on separate lines
@@ -332,11 +353,8 @@
 
         joined-children.push(child)
       } else if child.func() == text {
-        temp += child.text.split().map(
-          word => if word in keywords {
-            keyword-styles(word)
-          } else { word }
-        ).join([ ])
+        temp += [#show kw-regex: kw => keyword-styles(kw)
+          #child.text]
       } else {
         temp += child
       }
@@ -395,8 +413,6 @@
 //
 // Parameters:
 //   lines: List of algorithm lines from _get-algo-lines().
-//   keyword-styles: How to style keywords.
-//   keywords: List of terms.
 //   indent-size: Size of line indentations.
 //   indent-guides: Stroke for indent guides.
 //   indent-guides-offset: Horizontal offset of indent guides.
@@ -586,17 +602,14 @@
   _algo-indent-level.update(n => n - 1)
 }
 
-
-// Prevents internal content from being strongly emphasized.
+// Prevents internal from being recognised and displayed as a keyword. Alternatively, one can wrap it also in `#[]`.
 //
 // Parameters:
 //   body: Content.
-#let no-emph(body) = {
-  _assert-in-algo("cannot use #no-emph outside an algo element")
-  set strong(delta: 0)
+#let no-keyword(body) = {
+  _assert-in-algo("cannot use #no-keyword outside an algo element")
   body
 }
-
 
 // Adds a comment to a line in an algo body.
 //
@@ -700,7 +713,7 @@
   let lines = _get-algo-lines(
     body,
     keywords,
-    if keyword-styles == false { x => x } else { keyword-styles }
+    if keyword-styles == none { x => x } else { keyword-styles }
   )
   let formatted-lines = _build-formatted-algo-lines(
     lines,
