@@ -62,7 +62,7 @@
   } else {
     (kw,)
   }
-}).fold((), (acc, e) => acc + e)
+}).flatten()
 
 // constants for measuring text height
 #let _alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -167,7 +167,7 @@
     if title != none {
       set text(1.1em)
 
-      if type(title) == "string" {
+      if type(title) == str {
         underline(smallcaps(title))
       } else {
         title
@@ -183,17 +183,11 @@
 
       $($
 
-      for (i, param) in parameters.enumerate() {
-        if type(param) == "string" {
-          math.italic(param)
-        } else {
-          param
-        }
-
-        if i < parameters.len() - 1 {
-          [, ]
-        }
-      }
+      parameters.map(param => if type(param) == str {
+        math.italic(param)
+      } else {
+        param
+      }).join([, ])
 
       $)$
     }
@@ -260,7 +254,7 @@
 
     // height of line numbers
     measure(
-      line-number-styles(_numerals),
+      line-number-styles(9876543210),
       styles
     ).height
   )
@@ -423,43 +417,33 @@
   main-text-styles,
   comment-styles,
   line-number-styles
-) = {
-  let formatted-lines = ()
-
-  for (i, line) in lines.enumerate() {
-    let formatted-line = {
-      _algo-indent-level.display(indent-level => {
-        if indent-guides != none {
-          _algo-indent-guides(
-            indent-guides,
-            indent-guides-offset,
-            line,
-            i,
-            lines.len(),
-            indent-level,
-            indent-size,
-            inset,
-            row-gutter,
-            main-text-styles,
-            comment-styles,
-            line-number-styles
-          )
-        }
-
-        box(pad(
-          left: indent-size * indent-level,
-          line
-        ))
-      })
-
-      counter(_algo-line-ckey).step()
+) = lines.enumerate().map(((i, line)) => {
+  _algo-indent-level.display(indent-level => {
+    if indent-guides != none {
+      _algo-indent-guides(
+        indent-guides,
+        indent-guides-offset,
+        line,
+        i,
+        lines.len(),
+        indent-level,
+        indent-size,
+        inset,
+        row-gutter,
+        main-text-styles,
+        comment-styles,
+        line-number-styles
+      )
     }
 
-    formatted-lines.push(formatted-line)
-  }
+    box(
+      inset: (left: indent-size * indent-level),
+      line
+    )
+  })
 
-  return formatted-lines
-}
+  counter(_algo-line-ckey).step()
+})
 
 
 // Layouts algo content in a table.
@@ -521,28 +505,27 @@
     (x, _) => alignments.at(x)
   }
 
-  let table-data = ()
-
-  for (i, line) in formatted-lines.enumerate() {
-    if line-numbers {
-      let line-number = i + 1
-
-      table-data.push(line-number-styles(str(line-number)))
-    }
-
-    table-data.push(
-      main-text-styles(line)
-    )
-
-    if has-comments {
-      if comment-contents.at(i) == none {
-        table-data.push(none)
-      } else {
-        table-data.push(comment-styles(
-          comment-prefix + comment-contents.at(i)
-        ))
-      }
-    }
+  // first condition, then compute only neccesary data directly
+  let table-data = if line-numbers and has-comments {
+    formatted-lines.enumerate(start: 1).map(
+      ((i, line)) => (line-number-styles(i), main-text-styles(line))
+    ).zip(comment-contents.map(
+      cc => if cc == none { none } else {
+        comment-styles(comment-prefix + cc)
+      })
+    ).flatten()
+  } else if line-numbers {
+    formatted-lines.enumerate(start: 1).map(
+      ((i, line)) => (line-number-styles(i), main-text-styles(line))
+    ).flatten()
+  } else if has-comments {
+    formatted-lines.map(main-text-styles).zip(comment-contents.map(
+      cc => if cc == none { none } else {
+        comment-styles(comment-prefix + cc)
+      })
+    ).flatten()
+  } else {
+    formatted-lines.map(main-text-styles)
   }
 
   table(
@@ -685,7 +668,7 @@
   block-align: center,
   main-text-styles: x => x,
   comment-styles: x => text(fill: rgb(45%, 45%, 45%))[#x],
-  line-number-styles: x => x,
+  line-number-styles: i => [#i],
 ) = {
   // change nones to no behaviour
   let keyword-styles     = _none_to_nobehaviour(keyword-styles)
@@ -911,19 +894,19 @@
   let line-data = ()
   let line-count = 0
 
-  for i in range(num-lines) {
+  for (i, line) in line-strs.enumerate() {
     let indent-level = indent-levels.at(i)
 
-    let line-width = measure({
-      show raw: main-text-styles
-      raw(line-strs.at(i))
-    }, styles).width
+    let line-width = measure(
+      main-text-styles(raw(line)),
+      styles
+    ).width
 
     let line-wrapped-components = ()
 
     for j in range(calc.max(1, calc.ceil(line-width / real-text-width))) {
       let is-wrapped = j > 0
-      let real-indent-level = if is-wrapped {0} else {indent-level}
+      let real-indent-level = if is-wrapped { 0 } else { indent-level }
 
       let line-clip = {
         set align(start + top)
@@ -990,31 +973,29 @@
     measure(content, styles).height,
 
     // height of raw text
-    measure({
-      show raw: main-text-styles
-      raw(_ascii)
-    }, styles).height,
+    measure(
+      main-text-styles(raw(_ascii)),
+      styles
+    ).height,
 
     // height of line numbers
     measure(
       line-number-styles(
-        _numerals
+        9876543210
       ),
       styles
     ).height
   )
 
-  let indent-size = measure({
-    show raw: main-text-styles
-    raw("a" * tab-size)
-  }, styles).width
+  let indent-size = measure(
+    main-text-styles(raw("a" * tab-size)),
+    styles
+  ).width
 
-  // converting input parameters to absolute lengths
-  let block-inset-abs = measure(rect(width: block-inset), styles).width
-  let row-gutter-abs = measure(rect(width: row-gutter), styles).width
-
-  let is-first-line = line-index == 0
-  let is-last-line = line-index == num-lines - 1
+  // TODO: WHY?!
+    // converting input parameters to absolute lengths
+    // let block-inset-abs = measure(rect(width: block-inset), styles).width
+    // let row-gutter-abs = measure(rect(width: row-gutter), styles).width
 
   // display indent guides at the current line
   _indent-guides(
@@ -1023,10 +1004,10 @@
     indent-level,
     indent-size,
     row-height,
-    block-inset-abs,
-    row-gutter-abs,
-    is-first-line,
-    is-last-line
+    block-inset,//-abs,
+    row-gutter,//-abs,
+    line-index == 0,            // is first line?
+    line-index == num-lines - 1 // is last line?
   )
 })}
 
@@ -1058,37 +1039,55 @@
   main-text-styles,
   line-number-styles,
 ) = {
-  let flattened-line-data = line-data.fold((), (acc, e) => {
+  let flattened-line-data = line-data.map(e => {
     let line-wrapped-components = e.at(0)
     let indent-level = e.at(1)
 
-    for (i, line-clip) in line-wrapped-components.enumerate() {
+    line-wrapped-components.enumerate().map(((i, line-clip)) => {
       let is-wrapped = i > 0
-      let real-indent-level = if is-wrapped {0} else {indent-level}
-      acc.push((line-clip, is-wrapped, real-indent-level))
-    }
+      let real-indent-level = if is-wrapped { 0 } else { indent-level }
+      (line-clip, is-wrapped, real-indent-level)
+    })
+  }).sum() // sum works as a one level flatten operation
 
-    acc
-  })
+  let table-data = if line-numbers {
+    flattened-line-data.enumerate().map(((i, info)) => {
+      let line-clip = info.at(0)
+      let is-wrapped = info.at(1)
+      let indent-level = info.at(2)
 
-  let table-data = ()
+      (
+        if is-wrapped {
+          none
+        } else {
+          line-number-styles(i + 1)
+        }, {
+          if indent-guides != none { // could also be moved out
+            _code-indent-guides(
+              indent-guides,
+              indent-guides-offset,
+              line-clip,
+              i,
+              flattened-line-data.len(),
+              indent-level,
+              tab-size,
+              inset,
+              row-gutter,
+              main-text-styles,
+              line-number-styles
+            )
+          }
 
-  for (i, info) in flattened-line-data.enumerate() {
-    let line-clip = info.at(0)
-    let is-wrapped = info.at(1)
-    let indent-level = info.at(2)
+          box(line-clip)
+        }
+      )
+    }).flatten()
+  } else {
+    flattened-line-data.enumerate().map(((i, info)) => {
+      let line-clip = info.at(0)
+      let is-wrapped = info.at(1)
+      let indent-level = info.at(2)
 
-    if line-numbers {
-      if is-wrapped {
-        table-data.push(none)
-      } else {
-        table-data.push(
-          line-number-styles(str(i + 1))
-        )
-      }
-    }
-
-    let content = {
       if indent-guides != none {
         _code-indent-guides(
           indent-guides,
@@ -1106,9 +1105,7 @@
       }
 
       box(line-clip)
-    }
-
-    table-data.push(content)
+    })
   }
 
   table(
@@ -1165,7 +1162,7 @@
   breakable: false,
   block-align: center,
   main-text-styles: x => x,
-  line-number-styles: x => x,
+  line-number-styles: i => [#i],
 ) = {
   // change nones to no behaviour
   let main-text-styles = _none_to_nobehaviour(main-text-styles)
@@ -1226,8 +1223,8 @@
     main-text-styles,
     line-number-styles,
     text-height,
-    asc-height,
-    desc-height,
+    asc-height + 1pt,
+    desc-height + 1pt,
     indent-levels,
     size,
     styles,

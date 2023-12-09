@@ -56,7 +56,10 @@
   inset: 5pt,
   stroke: 2pt + black,
   fill: none,
-  keyword-styles: x => text(blue, x)
+  keyword-styles: x => underline(text(blue, x)),
+  line-number-styles: i => if calc.rem(i, 5) != 0 {
+    text(gray)[#i]
+  } else [#i]
 )[
   if $n < 0$:#i\
     return null#d\

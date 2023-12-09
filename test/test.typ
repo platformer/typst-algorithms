@@ -1,3 +1,8 @@
+// Make typst not embed the date in PDF metadata and as such reproducible
+// hashing can be used, to check if the document changed between versions,
+// if typst version is the same as before.
+#set document(date: none)
+
 #import "../algo.typ": algo, i, d, comment, code
 
 == Plain `algo` and `code`
