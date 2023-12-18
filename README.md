@@ -40,7 +40,7 @@ Here's a use of `algo` without a title, parameters, line numbers, or syntax high
 ```typst
 #algo(
   line-numbers: false,
-  strong-keywords: false
+  keyword-styles: none
 )[
   if $n < 0$:#i\
     return null#d\
@@ -72,7 +72,7 @@ And here's `algo` with more styling options:
   ],
   parameters: ([#math.italic("n")],),
   comment-prefix: [#sym.triangle.stroked.r ],
-  comment-styles: (fill: rgb(100%, 0%, 0%)),
+  comment-styles: x => text(fill: rgb(100%, 0%, 0%), x),
   indent-size: 15pt,
   indent-guides: 1pt + gray,
   row-gutter: 5pt,
@@ -80,6 +80,10 @@ And here's `algo` with more styling options:
   inset: 5pt,
   stroke: 2pt + black,
   fill: none,
+  keyword-styles: x => underline(text(blue, x)),
+  line-number-styles: i => if calc.rem(i, 5) != 0 {
+    text(gray)[#i]
+  } else [#i]
 )[
   if $n < 0$:#i\
     return null#d\
@@ -97,7 +101,7 @@ And here's `algo` with more styling options:
 ]
 ```
 
-<img src="https://github.com/platformer/typst-algorithms/assets/40146328/89f80b5d-bdb2-420a-935d-24f43ca597d8" width="300px" />
+<img src="examples/seperated/ex3.png" width="300px" />
 
 &nbsp;
 
@@ -157,7 +161,7 @@ algo(
   title: none,
   parameters: (),
   line-numbers: true,
-  strong-keywords: true,
+  keyword-styles: strong,
   keywords: _algo-default-keywords, // see below
   comment-prefix: "// ",
   indent-size: 20pt,
@@ -171,9 +175,9 @@ algo(
   radius: 0pt,
   breakable: false,
   block-align: center,
-  main-text-styles: (:),
-  comment-styles: (fill: rgb(45%, 45%, 45%)),
-  line-number-styles: (:)
+  main-text-styles: x => x,
+  comment-styles: x => text(fill: rgb(45%, 45%, 45%))[#x],
+  line-number-styles: i => [#i]
 )
 ```
 
@@ -189,9 +193,9 @@ algo(
 
 *   `line-numbers`: `boolean` &mdash; Whether to display line numbers.
 
-*   `strong-keywords`: `boolean` &mdash; Whether to strongly emphasize keywords.
+*   `keyword-styles`: `content -> content` &mdash; A styling function to apply to keywords. The default function is `strong`, making keywords bold. If `none` is used, the identity function `x => x` will be used, i.e. keywords will not have special styling. Take a look at the examples to understand how this works.
 
-*   `keywords`: `array` &mdash; List of terms to receive strong emphasis. Elements must be `string` values. Ignored if `strong-keywords` is `false`.
+*   `keywords`: `array` &mdash; List of terms to receive strong emphasis. Elements must be `string` or `regex` values, while `string`s are prefered. Ignored if `keyword-styles` is `none`.
 
     The default list of keywords is stored in `_algo-default-keywords`. This list contains the following terms:
 
@@ -203,6 +207,11 @@ algo(
     ```
 
     Note that for each of the above terms, `_algo-default-keywords` also contains the uppercase form of the term (e.g. "for" and "For").
+
+    Note that algo currently uses regex to match keywords, so that
+    - you can also use regex expressions like `"colou?r"`
+    - you must escape special characters (`*`, `+`, `(`, `)`, and more)
+    However, if the expression starts or ends with a special character, this can yield unexpected behaviour. In this case `regex` together with regex word boundaries should be used: `regex("\b{start}while( let)?\b{end}")`
 
 *   `comment-prefix`: `content` &mdash; What to prepend comments with.
 
@@ -228,11 +237,11 @@ algo(
 
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `algo` on the page. Using `none` will cause the internal `block` element to be returned as-is.
 
-*   `main-text-styles`: `dictionary` &mdash; Styling options for the main algorithm text. Supports all parameters in Typst's native `text` function.
+*   `main-text-styles`: `content -> content` &mdash; Styling function to apply to the main algorithm text. Works similar to the `keyword-styles` argument.
 
-*   `comment-styles`: `dictionary` &mdash; Styling options for comment text. Supports all parameters in Typst's native `text` function.
+*   `comment-styles`: `content -> content` &mdash; Styling function to apply to comments. Works similar to the `keyword-styles` argument.
 
-*   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
+*   `line-number-styles`: `int -> content` &mdash; Styling function to apply to line numbers. Works similar to the `keyword-styles` argument, *but* the argument is the line number, making it possible to perform case destinction, e.g. to only display line numbers, which are a multiple of 5.
 
 ### `i` and `d`
 
@@ -263,12 +272,12 @@ comment(
     #comment(inline: true)[#text(weight: 700)[...]]
     ```
 
-### `no-emph`
+### `no-keyword`
 
-For use in an `algo` body. Prevents the passed content from being strongly emphasized. If a word appears in your algorithm both as a keyword and as normal text, you may escape the non-keyword usages via this function.
+For use in an `algo` body. Prevents the passed content from being recognised as a keyword. If a word appears in your algorithm both as a keyword and as normal text, you may escape the non-keyword usages via this function.
 
 ```typst
-no-emph(
+no-keyowrd(
   body
 )
 ```
@@ -296,8 +305,8 @@ code(
   radius: 0pt,
   breakable: false,
   block-align: center,
-  main-text-styles: (:),
-  line-number-styles: (:)
+  main-text-styles: x => x,
+  line-number-styles: i => [#i]
 )
 ```
 
@@ -329,9 +338,9 @@ code(
 
 *   `block-align`: `none` or `alignment` or `2d alignment` &mdash; Alignment of the `code` on the page. Using `none` will cause the internal `block` element to be returned as-is.
 
-*   `main-text-styles`: `dictionary` &mdash; Styling options for the main raw text. Supports all parameters in Typst's native `text` function.
+*   `main-text-styles`: `content -> content` &mdash; Styling function to apply to the main raw text. Works similar to the same argument for the `algo` function.
 
-*   `line-number-styles`: `dictionary` &mdash; Styling options for line numbers. Supports all parameters in Typst's native `text` function.
+*   `line-number-styles`: `int -> content` &mdash; Styling function to apply to line numbers. Works similar to the same argument for the `algo` function.
 
 ## Contributing
 

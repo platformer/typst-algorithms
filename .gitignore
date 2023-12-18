@@ -8,6 +8,8 @@
 !examples
 !examples/examples.typ
 !examples/examples.pdf
+!examples/seperated
+!examples/seperated/ex3.png
 
 !test
 !test/test.typ

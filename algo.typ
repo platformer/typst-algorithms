@@ -213,9 +213,9 @@
 //   indent-size: The indent size used in the current element.
 //   block-inset: The inset of the current element.
 //   row-gutter: The row-gutter of the current element.
-//   main-text-styles: Dictionary of styling options for the algorithm steps.
-//   comment-styles: Dictionary of styling options for comment text.
-//   line-number-styles: Dictionary of styling options for the line numbers.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   comment-styles: Styling function to apply to comments.
+//   line-number-styles: Styling function to apply to line numbers.
 #let _algo-indent-guides(
   indent-guides,
   indent-guides-offset,
@@ -231,10 +231,9 @@
   line-number-styles,
 ) = { locate(loc => style(styles => {
   let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-  let line-index-str = str(line-index)
   let comment-dicts = _algo-comment-dicts.final(loc)
   let comment-content = comment-dicts.at(id-str, default: (:))
-                                     .at(line-index-str, default: [])
+                                     .at(str(line-index), default: [])
 
   // heuristically determine the height of the containing table row
   let row-height = calc.max(
@@ -254,12 +253,13 @@
 
     // height of line numbers
     measure(
-      line-number-styles(9876543210),
+      line-number-styles(line-index),
       styles
     ).height
   )
 
-  // converting input parameters to absolute lengths
+  // TODO: WHY?!
+  /*// converting input parameters to absolute lengths
   let indent-size-abs = measure(
     rect(width: indent-size),
     styles
@@ -274,6 +274,7 @@
     rect(width: row-gutter),
     styles
   ).width
+  */
 
   let is-first-line = line-index == 0
   let is-last-line = line-index == num-lines - 1
@@ -283,10 +284,10 @@
     indent-guides,
     indent-guides-offset,
     indent-level,
-    indent-size-abs,
+    indent-size,
     row-height,
-    block-inset-abs,
-    row-gutter-abs,
+    block-inset,
+    row-gutter,
     is-first-line,
     is-last-line
   )
@@ -297,16 +298,36 @@
 // Parameters:
 //   keywords: List of terms
 #let _compute-keyword-regex(keywords) = {
-  let keywords = keywords.map(kw => kw.trim())
+  // distinguish between 4 cases:
+  // - word boundaries on both sides, e.g. while
+  // - word boundary only left,       e.g. let*
+  // - word boundary only right,      e.g. $for
+  // - no word boundaries,            e.g. :
+  let char-regex = regex("\w")
+  let str-keywords = keywords.filter(
+    kw => type(kw) == str
+  ).map(
+    kw => kw.trim()
+  ).map(kw =>
+    if kw.starts-with(char-regex) {
+      "\b{start}" + kw + if kw.ends-with(char-regex) { "\b{end}" }
+    } else {
+      kw + if kw.ends-with(char-regex) { "\b{end}" }
+    }
+  ).join("|")
+  
+  (regex(str-keywords), keywords.filter(kw => type(kw) != str))
+}
 
-  let word-keywords = keywords.filter(kw => kw.match(regex("[^\w ]")) == none).join("|")
-  
-  let nonword-keywords = keywords.filter(kw => kw.match(regex("[^\w ]")) != none)
-  let nonword-keywords = if nonword-keywords != () { "|" + nonword-keywords.join("|") }
-  
-  let keyword-regex = "\b{start}(?:" + word-keywords + ")\b{end}" + nonword-keywords
-  
-  regex(keyword-regex)
+// Returns the content with a keyword show rule applied to a text element
+//
+// Parameters:
+//   kwr: regex keyword(s)
+//   keyword-styles: as always
+//   child: text element to apply keyword filtered styling to
+#let _single-content-replacer(kwr, keyword-styles, child) = {
+  show kwr: kw => keyword-styles(kw)
+  child
 }
 
 // Returns list of content values, where each element is
@@ -323,6 +344,12 @@
 
   // compute a regex expr for all keywords alltogether
   let kw-regex = _compute-keyword-regex(keywords)
+  // creates a nested content block, as show rules nor regex cannot be joined
+  // i.e. [#show .. #[#show .. #[#show .... #[#show child]]]]
+  let content-replacer(child) = kw-regex.at(1).fold(
+    _single-content-replacer(kw-regex.at(0), keyword-styles, child),
+    (total, kw) => _single-content-replacer(kw, keyword-styles, total)
+  )
 
   // concatenate consecutive non-whitespace elements
   // i.e. just combine everything that definitely aren't on separate lines
@@ -339,8 +366,7 @@
 
         joined-children.push(child)
       } else if child.func() == text {
-        temp += [#show kw-regex: kw => keyword-styles(kw)
-          #child.text]
+        temp += content-replacer(child)
       } else {
         temp += child
       }
@@ -404,9 +430,9 @@
 //   indent-guides-offset: Horizontal offset of indent guides.
 //   inset: Inner padding.
 //   row-gutter: Space between lines.
-//   main-text-styles: Dictionary of styling options for the algorithm steps.
-//   comment-styles: Dictionary of styling options for comment text.
-//   line-number-styles: Dictionary of styling options for the line numbers.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   comment-styles: Styling function to apply to comments.
+//   line-number-styles: Styling function to apply to line numbers.
 #let _build-formatted-algo-lines(
   lines,
   indent-size,
@@ -454,9 +480,9 @@
 //   comment-prefix: Content to prepend comments with.
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers, text, and comments.
-//   main-text-styles: Dictionary of styling options for the algorithm steps.
-//   comment-styles: Dictionary of styling options for comment text.
-//   line-number-styles: Dictionary of styling options for the line numbers.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   comment-styles: Styling function to apply to comments.
+//   line-number-styles: Styling function to apply to line numbers.
 #let _build-algo-table(
   formatted-lines,
   line-numbers,
@@ -625,7 +651,7 @@
 //   title: Algorithm title. Ignored if header is not none.
 //   Parameters: Array of parameters. Ignored if header is not none.
 //   line-numbers: Whether to have line numbers.
-//   keyword-styles: How to style keywords. Use none
+//   keyword-styles: Styling function to apply on keywords. Use none to not emphasize keywords.
 //   keywords: List of terms.
 //   comment-prefix: Content to prepend comments with.
 //   indent-size: Size of line indentations.
@@ -640,12 +666,9 @@
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
 //   block-align: Alignment of block. Use none for no alignment.
-//   main-text-styles: Dictionary of styling options for the algorithm steps.
-//     Supports any parameter in Typst's native text function.
-//   comment-styles: Dictionary of styling options for comment text.
-//     Supports any parameter in Typst's native text function.
-//   line-number-styles: Dictionary of styling options for the line numbers.
-//     Supports any parameter in Typst's native text function.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   comment-styles: Styling function to apply to comments.
+//   line-number-styles: Styling function to apply to line numbers.
 #let algo(
   body,
   header: none,
@@ -724,13 +747,14 @@
     radius: radius,
     inset: inset,
     outset: 0pt,
-    breakable: breakable
-  )[
-    #set align(start + top)
-    #algo-header
-    #v(weak: true, row-gutter)
-    #align(left, algo-table)
-  ]
+    breakable: breakable,
+    {
+      set align(start + top)
+      algo-header
+      v(weak: true, row-gutter)
+      align(left, algo-table)
+    }
+  )
 
   // display content
   set par(justify: false)
@@ -751,16 +775,13 @@
 //   - height of descenders
 //
 // Parameters:
-//   main-text-styles: Dictionary of styling options for the source code.
+//   main-text-styles: Styling function to apply to the main algorithm text.
 //   styles: styles value obtained from call to style
 #let _get-code-text-height(
   main-text-styles,
   styles
 ) = {
-  let styled-ascii = {
-    show raw: main-text-styles
-    raw(_ascii)
-  }
+  let styled-ascii = main-text-styles(raw(_ascii))
 
   let text-height = measure({
     show raw: set text(top-edge: "cap-height", bottom-edge: "baseline")
@@ -836,8 +857,8 @@
 //   line-numbers: Whether there are line numbers.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding of containing block.
-//   main-text-styles: Dictionary of styling options for the source code.
-//   line-number-styles: Dictionary of styling options for the line numbers.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   line-number-styles: Styling function to apply to line numbers.
 //   text-height: Height of raw text, baseline to cap-height.
 //   ascender-height: Height of raw text ascenders.
 //   descender-height: Height of raw text descenders.
@@ -863,12 +884,13 @@
   let num-lines = line-strs.len()
   let container-width = container-size.width
 
-  let line-number-col-width = measure(
-    line-number-styles(
-      "0" * (calc.floor(calc.log(num-lines)) + 1)
-    ),
-    styles
-  ).width
+  let line-number-col-width = calc.max(
+    ..range(1, num-lines + 1).map(
+      i => line-number-styles(i)
+    ).filter(x => x != []).map(
+      x => measure(x, styles).width
+    )
+  )
 
   let max-text-area-width = (
     container-size.width - inset * 2 - if line-numbers {
@@ -950,10 +972,8 @@
 //   tab-size: Amount of spaces that should be considered an indent.
 //   block-inset: The inset of the current element.
 //   row-gutter: The row-gutter of the current element.
-//   main-text-styles: Dictionary of styling options for the source code.
-//     Supports any parameter in Typst's native text function.
-//   line-number-styles: Dictionary of styling options for the line numbers.
-//     Supports any parameter in Typst's native text function.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   line-number-styles: Styling function to apply to line numbers.
 #let _code-indent-guides(
   indent-guides,
   indent-guides-offset,
@@ -980,9 +1000,7 @@
 
     // height of line numbers
     measure(
-      line-number-styles(
-        9876543210
-      ),
+      line-number-styles(line-index),
       styles
     ).height
   )
@@ -1024,8 +1042,8 @@
 //   row-gutter: Space between lines.
 //   column-gutter: Space between line numbers and text.
 //   inset: Inner padding.
-//   main-text-styles: Dictionary of styling options for the source code.
-//   line-number-styles: Dictionary of styling options for the line numbers.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   line-number-styles: Styling function to apply to line numbers.
 #let _build-code-table(
   line-data,
   indent-levels,
@@ -1143,10 +1161,8 @@
 //   breakable: Whether the element should be breakable across pages.
 //     Warning: indent guides may look off when broken across pages.
 //   block-align: Alignment of block. Use none for no alignment.
-//   main-text-styles: Dictionary of styling options for the source code.
-//     Supports any parameter in Typst's native text function.
-//   line-number-styles: Dictionary of styling options for the line numbers.
-//     Supports any parameter in Typst's native text function.
+//   main-text-styles: Styling function to apply to the main algorithm text.
+//   line-number-styles: Styling function to apply to line numbers.
 #let code(
   body,
   line-numbers: true,

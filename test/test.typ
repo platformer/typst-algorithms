@@ -889,3 +889,104 @@ def floyd_warshall(G):
     return dist
   ```
 ]
+
+== Custom keyword/comment styling, conditional line numbering
+
+#table(
+  columns: 2,
+  stroke: none,
+  align: (x, _) => (right, left).at(x),
+  "keyword-styles:", ```typst
+  x => if x in ([for], [in], [to], [:]) {
+    text(blue, x)
+  } else {
+    underline(text(blue, x))
+  }
+  ```,
+  "line-number-styles:", ```typst
+  i => if calc.rem(i, 5) != 0 {
+    text(gray, 8pt)[#i]
+  } else [#i]
+  ```
+)
+
+#algo(
+  title: "Floyd-Warshall",
+  parameters: ("V", "E", "w"),
+  keyword-styles: x => if x in ([for], [in], [to], [:]) {
+    text(blue, x)
+  } else {
+    underline(text(blue, x))
+  },
+  line-number-styles: i => if calc.rem(i, 5) != 0 {
+    text(gray, 8pt)[#i]
+  } else [#i]
+)[
+  Let $"dist"[u,v] <- infinity$ for $u,v$ in $V$\
+  For $(u,v)$ in $E$:#i\
+    $"dist"[u,v] <- w(u,v)$ #comment[edge weights] #d\
+  For $v$ in $V$:#i\
+    $"dist"[v,v] <- 0$ #comment[base case] #d\
+  \
+  For $k <- 1$ to $|V|$:#i\
+    For $i <- 1$ to $|V|$:#i\
+      For $j <- 1$ to $|V|$:#i\
+        #comment(inline: true)[if new path is shorter, reduce distance]\
+        If $"dist"[i,j] > "dist"[i,k] + "dist"[k,j]$:#i\
+          $"dist"[i,j] <- "dist"[i,k] + "dist"[k,j]$#d#d#d#d\
+  \
+  Return $"dist"$
+]
+
+#code(
+  line-number-styles: i => if calc.rem(i, 5) != 0 {
+    text(gray, 8pt)[#i]
+  } else [#i]
+)[
+  ```py
+  def floyd_warshall(G):
+    # let G be an adjacency matrix
+    dist = G
+    
+    for k in range(len(G)):
+      for i in range(len(G)):
+        for j in range(len(G)):
+          if dist[i][j] > dist[i][k] + dist[k][j]:
+            dist[i][j] = dist[i][k] + dist[k][j]
+    
+    return dist
+  ```
+]
+
+== Algo Keyword Regex Test
+
+#table(
+  columns: 2,
+  stroke: none,
+  align: (x, _) => (right, left).at(x),
+  "keywords:", `("A", "B\*", "\*C", "\*D\*", "\+", "E\*E", "FF?F", "G{4}")`,
+  "keyword-styles:", `x => text(red, x)`
+)
+
+#algo(
+  title: "Regex Tester",
+  keywords: ("A", "B\*", "\*C", "\*D\*", "\+", "E\*E", "FF?F", "G{4}", regex("\b{start}H{4}\b{end}"), "if (let)?", regex("\b{start}while( let)?\b{end}")),
+  keyword-styles: x => text(red, x)
+)[
+  A AA AAA A\* \*A \*A\* A\*A\
+  A+ +A +A+ A+A\
+  B BB BBB B\* \*B \*B\* B\*B\
+  B+ +B +B+ B+B\
+  C CC CCC C\* \*C \*C\* C\*C\
+  C+ +C +C+ C+C\
+  D DD DDD D\* \*D \*D\* D\*D\
+  D+ +D +D+ D+D\
+  E EE EEE E\* \*E \*E\* E\*E\
+  E+ +E +E+ E+E\
+  F FF FFF F\* \*F \*F\* F\*F\
+  F+ +F +F+ F+F\
+  G GG GGG GGGG GGGGG GGGGGG\
+  H HH HHH HHHH HHHHH HHHHHH\
+  if let if iif if letter\
+  while let while wwhile while letter
+]
