@@ -235,10 +235,10 @@
   main-text-styles,
   comment-styles,
   line-number-styles,
-) = { locate(loc => style(styles => {
-  let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
+) = context {
+  let id-str = str(counter(_algo-id-ckey).at(here()).at(0))
   let line-index-str = str(line-index)
-  let comment-dicts = _algo-comment-dicts.final(loc)
+  let comment-dicts = _algo-comment-dicts.final()
   let comment-content = comment-dicts.at(id-str, default: (:))
                                      .at(line-index-str, default: [])
 
@@ -250,8 +250,7 @@
         set text(..main-text-styles)
         _alphanumerics
         content
-      },
-      styles
+      }
     ).height,
 
     // height of comment
@@ -259,8 +258,7 @@
       {
         set text(..comment-styles)
         comment-content
-      },
-      styles
+      }
     ).height,
 
     // height of line numbers
@@ -268,25 +266,21 @@
       {
         set text(..line-number-styles)
         _numerals
-      },
-      styles
+      }
     ).height
   )
 
   // converting input parameters to absolute lengths
   let indent-size-abs = measure(
-    rect(width: indent-size),
-    styles
+    rect(width: indent-size)
   ).width
 
   let block-inset-abs = measure(
-    rect(width: block-inset),
-    styles
+    rect(width: block-inset)
   ).width
 
   let row-gutter-abs = measure(
-    rect(width: row-gutter),
-    styles
+    rect(width: row-gutter)
   ).width
 
   let is-first-line = line-index == 0
@@ -304,7 +298,7 @@
     is-first-line,
     is-last-line
   )
-}))}
+}
 
 
 // Returns list of content values, where each element is
@@ -440,7 +434,9 @@
         }
       }
 
-      _algo-indent-level.display(indent-level => {
+      context {
+        let indent-level = _algo-indent-level.get()
+
         if indent-guides != none {
           _algo-indent-guides(
             indent-guides,
@@ -462,7 +458,7 @@
           left: indent-size * indent-level,
           line
         ))
-      })
+      }
 
       counter(_algo-line-ckey).step()
     }
@@ -494,9 +490,9 @@
   main-text-styles,
   comment-styles,
   line-number-styles,
-) = { locate(loc => {
-  let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-  let comment-dicts = _algo-comment-dicts.final(loc)
+) = context {
+  let id-str = str(counter(_algo-id-ckey).at(here()).at(0))
+  let comment-dicts = _algo-comment-dicts.final()
   let has-comments = id-str in comment-dicts
 
   let comment-contents = if has-comments {
@@ -572,15 +568,14 @@
     inset: 0pt,
     ..table-data
   )
-})}
+}
 
 
 // Asserts that the current context is an algo element.
 // Returns the provided message if the assertion fails.
-#let _assert-in-algo(message) = {
-  _algo-in-algo-context.display(is-in-algo => {
-    _algo-assert(is-in-algo, message: message)
-  })
+#let _assert-in-algo(message) = context {
+  let is-in-algo = _algo-in-algo-context.get()
+  _algo-assert(is-in-algo, message: message)
 }
 
 
@@ -599,9 +594,10 @@
 #let d = {
   _assert-in-algo("cannot use #d outside an algo element")
 
-  _algo-indent-level.display(n => {
+  context {
+    let n = _algo-indent-level.get()
     _algo-assert(n - 1 >= 0, message: "dedented too much")
-  })
+  }
 
   _algo-indent-level.update(n => n - 1)
 }
@@ -629,18 +625,16 @@
 ) = {
   _assert-in-algo("cannot use #comment outside an algo element")
 
-  if inline {
-    _algo-comment-prefix.display(comment-prefix => {
-      _algo-comment-styles.display(comment-styles => {
-        set text(..comment-styles)
-        comment-prefix
-        no-emph(body)
-      })
-    })
-  } else {
-    locate(loc => {
-      let id-str = str(counter(_algo-id-ckey).at(loc).at(0))
-      let line-index-str = str(counter(_algo-line-ckey).at(loc).at(0))
+  context {
+    if inline {
+      let comment-prefix = _algo-comment-prefix.get()
+      let comment-styles = _algo-comment-styles.get()
+      set text(..comment-styles)
+      comment-prefix
+      no-emph(body)
+    } else {
+      let id-str = str(counter(_algo-id-ckey).at(here()).at(0))
+      let line-index-str = str(counter(_algo-line-ckey).at(here()).at(0))
 
       _algo-comment-dicts.update(comment-dicts => {
         let comments = comment-dicts.at(id-str, default: (:))
@@ -650,7 +644,7 @@
         comment-dicts.insert(id-str, comments)
         comment-dicts
       })
-    })
+    }
   }
 }
 
@@ -780,10 +774,8 @@
 //
 // Parameters:
 //   main-text-styles: Dictionary of styling options for the source code.
-//   styles: styles value obtained from call to style
 #let _get-code-text-height(
-  main-text-styles,
-  styles
+  main-text-styles
 ) = {
   let styled-ascii = {
     show raw: set text(..main-text-styles)
@@ -793,17 +785,17 @@
   let text-height = measure({
     show raw: set text(top-edge: "cap-height", bottom-edge: "baseline")
     styled-ascii
-  }, styles).height
+  }).height
 
   let text-and-ascender-height = measure({
     show raw: set text(top-edge: "ascender", bottom-edge: "baseline")
     styled-ascii
-  }, styles).height
+  }).height
 
   let text-and-descender-height = measure({
     show raw: set text(top-edge: "cap-height", bottom-edge: "descender")
     styled-ascii
-  }, styles).height
+  }).height
 
   return (
     text-height,
@@ -883,8 +875,7 @@
   ascender-height,
   descender-height,
   indent-levels,
-  container-size,
-  styles
+  container-size
 ) = {
   let line-spacing = 100pt
   let line-strs = raw-text.text.split("\n")
@@ -894,7 +885,7 @@
   let line-number-col-width = measure({
     set text(..line-number-styles)
     "0" * (calc.floor(calc.log(num-lines)) + 1)
-  }, styles).width
+  }).width
 
   let max-text-area-width = (
     container-size.width - inset * 2 - if line-numbers {
@@ -907,7 +898,7 @@
   let max-text-width = measure({
     show raw: set text(..main-text-styles)
     raw-text
-  }, styles).width
+  }).width
 
   let real-text-width = calc.min(max-text-width, max-text-area-width)
 
@@ -926,7 +917,7 @@
     let line-width = measure({
       show raw: set text(..main-text-styles)
       raw(line-strs.at(i))
-    }, styles).width
+    }).width
 
     let line-wrapped-components = ()
 
@@ -992,33 +983,33 @@
   row-gutter,
   main-text-styles,
   line-number-styles,
-) = { style(styles => {
+) = {
   // heuristically determine the height of the row
   let row-height = calc.max(
     // height of content
-    measure(content, styles).height,
+    measure(content).height,
 
     // height of raw text
     measure({
       show raw: set text(..main-text-styles)
       raw(_ascii)
-    }, styles).height,
+    }).height,
 
     // height of line numbers
     measure({
       set text(..line-number-styles)
       _numerals
-    }, styles).height
+    }).height
   )
 
   let indent-size = measure({
     show raw: set text(..main-text-styles)
     raw("a" * tab-size)
-  }, styles).width
+  }).width
 
   // converting input parameters to absolute lengths
-  let block-inset-abs = measure(rect(width: block-inset), styles).width
-  let row-gutter-abs = measure(rect(width: row-gutter), styles).width
+  let block-inset-abs = measure(rect(width: block-inset)).width
+  let row-gutter-abs = measure(rect(width: row-gutter)).width
 
   let is-first-line = line-index == 0
   let is-last-line = line-index == num-lines - 1
@@ -1035,7 +1026,7 @@
     is-first-line,
     is-last-line
   )
-})}
+}
 
 
 // Layouts code content in a table.
@@ -1174,7 +1165,7 @@
   block-align: center,
   main-text-styles: (:),
   line-number-styles: (:),
-) = { layout(size => style(styles => {
+) = { layout(size => {
   let raw-text = if body.func() == raw {
     body
   } else if body != [] and body.has("children") {
@@ -1201,10 +1192,7 @@
 
   let line-strs = raw-text.text.split("\n")
 
-  let (text-height, asc-height, desc-height) = _get-code-text-height(
-    main-text-styles,
-    styles
-  )
+  let (text-height, asc-height, desc-height) = _get-code-text-height(main-text-styles)
 
   let real-row-gutter = calc.max(0pt, row-gutter - asc-height - desc-height)
 
@@ -1232,8 +1220,7 @@
     asc-height,
     desc-height,
     indent-levels,
-    size,
-    styles,
+    size
   )
 
   let code-table = _build-code-table(
@@ -1271,4 +1258,4 @@
   } else {
     code-block
   }
-}))}
+})}
