@@ -167,7 +167,7 @@
     if title != none {
       set text(1.1em)
 
-      if type(title) == "string" {
+      if type(title) == str {
         underline(smallcaps(title))
       } else {
         title
@@ -184,7 +184,7 @@
       $($
 
       for (i, param) in parameters.enumerate() {
-        if type(param) == "string" {
+        if type(param) == str {
           math.italic(param)
         } else {
           param
