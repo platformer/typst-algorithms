@@ -185,7 +185,7 @@
 
       for (i, param) in parameters.enumerate() {
         if type(param) == str {
-          math.italic(param)
+          $italic(param)$
         } else {
           param
         }
