@@ -1,6 +1,6 @@
 [package]
 name = "algo"
-version = "0.3.5"
+version = "0.3.6"
 entrypoint = "algo.typ"
 authors = ["platformer <https://github.com/platformer>"]
 license = "MIT"

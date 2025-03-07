@@ -3,7 +3,7 @@
 A Typst library for writing algorithms. On Typst v0.6.0+ you can import the `algo` package:
 
 ```typst
-#import "@preview/algo:0.3.5": algo, i, d, comment, code
+#import "@preview/algo:0.3.6": algo, i, d, comment, code
 ```
 
 Otherwise, add the `algo.typ` file to your project and import it as normal:
